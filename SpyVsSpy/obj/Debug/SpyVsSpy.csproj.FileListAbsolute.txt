@@ -1,0 +1,10 @@
+C:\Users\kristina\Documents\Visual Studio 2017\Projects\SpyVsSpy\SpyVsSpy\bin\Debug\SpyVsSpy.exe.config
+C:\Users\kristina\Documents\Visual Studio 2017\Projects\SpyVsSpy\SpyVsSpy\bin\Debug\SpyVsSpy.exe
+C:\Users\kristina\Documents\Visual Studio 2017\Projects\SpyVsSpy\SpyVsSpy\bin\Debug\SpyVsSpy.pdb
+C:\Users\kristina\Documents\Visual Studio 2017\Projects\SpyVsSpy\SpyVsSpy\obj\Debug\SpyVsSpy.csprojAssemblyReference.cache
+C:\Users\kristina\Documents\Visual Studio 2017\Projects\SpyVsSpy\SpyVsSpy\obj\Debug\SpyVsSpy.Game.resources
+C:\Users\kristina\Documents\Visual Studio 2017\Projects\SpyVsSpy\SpyVsSpy\obj\Debug\SpyVsSpy.Properties.Resources.resources
+C:\Users\kristina\Documents\Visual Studio 2017\Projects\SpyVsSpy\SpyVsSpy\obj\Debug\SpyVsSpy.csproj.GenerateResource.cache
+C:\Users\kristina\Documents\Visual Studio 2017\Projects\SpyVsSpy\SpyVsSpy\obj\Debug\SpyVsSpy.csproj.CoreCompileInputs.cache
+C:\Users\kristina\Documents\Visual Studio 2017\Projects\SpyVsSpy\SpyVsSpy\obj\Debug\SpyVsSpy.exe
+C:\Users\kristina\Documents\Visual Studio 2017\Projects\SpyVsSpy\SpyVsSpy\obj\Debug\SpyVsSpy.pdb
