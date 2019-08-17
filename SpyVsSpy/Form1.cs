@@ -13,6 +13,8 @@ namespace SpyVsSpy
 	// control of the game
 	public class Game
 	{
+		public static Player human;
+
 		public static void LoadMapFromFile()
 		{
 
@@ -25,12 +27,41 @@ namespace SpyVsSpy
 			int new_y = 100 + y;								// height of floor in the view is 100 and its farthes edge is coordinate 100
 			return new Coordinates(new_x, new_y);
 		}
+
+		public static void EventOnKeyPress(char key)
+		{
+			switch (key)
+			{
+				case 'W': human.MovePlayer('U'); break;
+			}
+		}
+
+		public static void Initialize(Form1 parent)
+		{
+
+		}
 	}
 
 	public class Player
 	{
-		Position playerPosition;
-		bool alive;
+		Position playerPosition = new Position();
+		bool alive = true;
+		PictureBox pictureBox;
+
+		// moves player in given direction and updates his position on the screen
+		public void MovePlayer(char direction)
+		{
+			switch (direction)
+			{
+				case 'U': playerPosition.posX -= 5; break;
+				case 'D': playerPosition.posX += 5; break;
+				case 'L': playerPosition.posY -= 5; break;
+				case 'R': playerPosition.posY += 5; break;
+			}
+
+			Coordinates screenCoords = Game.FloorCoordsToPictureCoords(playerPosition.posX, playerPosition.posY);
+			UI.ChangePictureBoxLocation(pictureBox, screenCoords);
+		}
 	}
 
 	public class Trap
@@ -40,11 +71,11 @@ namespace SpyVsSpy
 
 	public class Position
 	{
-		int floor;
-		int roomX;
-		int roomY;
-		int posX;
-		int posY;
+		public int floor;
+		public int roomX;
+		public int roomY;
+		public int posX;
+		public int posY;
 		
 		// compares two positions and compares them
 		// parameter type specifies the type of comparison: 
@@ -68,8 +99,8 @@ namespace SpyVsSpy
 
 	public class Coordinates
 	{
-		int x;
-		int y;
+		public int x;
+		public int y;
 
 		public Coordinates(int x, int y)
 		{
@@ -107,12 +138,12 @@ namespace SpyVsSpy
 		}
 
 		// creates a new PictureBox in the specified position and returns the PictureBox instance
-		public static PictureBox CreatePictureBox(string path, int xPos, int yPos, int width, int height, Form1 parent)
+		public static PictureBox CreatePictureBox(string path, Coordinates coords, int width, int height, Form1 parent)
 		{
 			PictureBox pb = new PictureBox();
 			pb.ImageLocation = path;
 			pb.Size = new Size(width, height);
-			pb.Location = new Point(xPos, yPos);
+			pb.Location = new Point(coords.x, coords.y);
 			parent.Controls.Add(pb);
 			return pb;
 		}
@@ -122,15 +153,29 @@ namespace SpyVsSpy
 		{
 			pb.ImageLocation = path;
 		}
-
-		public static void ChangePictureBoxLocation(PictureBox pb, int xNew, int yNew)
+		
+		// changes the location of given PictureBox
+		public static void ChangePictureBoxLocation(PictureBox pb, Coordinates coords)
 		{
-			pb.Location = new Point(xNew, yNew);
+			pb.Location = new Point(coords.x, coords.y);
 		}
 	}
 
 	public partial class Form1 : Form
 	{
+		// handles behavior after key press
+		protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+		{
+			switch (keyData)
+			{
+				case Keys.Up: case Keys.W: Game.EventOnKeyPress('W'); break;
+				case Keys.Down: case Keys.S: Game.EventOnKeyPress('S'); break;
+				case Keys.Left: case Keys.A: Game.EventOnKeyPress('A'); break;
+				case Keys.Right: case Keys.D: Game.EventOnKeyPress('D'); break;
+			}
+			return base.ProcessCmdKey(ref msg, keyData);
+		}
+
 		public Form1()
 		{
 			InitializeComponent();
@@ -138,9 +183,9 @@ namespace SpyVsSpy
 
 		private void Form1_Load(object sender, EventArgs e)
 		{
-			PictureBox player = UI.CreatePictureBox("../../Assets/Images/placeholderPlayer.png", 100, 100, 50, 100, this);
-			PictureBox background = UI.CreatePictureBox("../../Assets/Images/roomO.png", 0, 0, 500, 200, this);
-			UI.ChangePictureBoxLocation(player, 200, 100);
+			//PictureBox player = UI.CreatePictureBox("../../Assets/Images/placeholderPlayer.png", new Coordinates(100, 100), 50, 100, this);
+			//PictureBox background = UI.CreatePictureBox("../../Assets/Images/roomO.png", new Coordinates(0, 0), 500, 200, this);
+			//UI.ChangePictureBoxLocation(player, new Coordinates(200, 100);
 		}
 	}
 }
