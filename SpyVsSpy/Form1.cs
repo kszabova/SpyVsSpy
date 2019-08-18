@@ -20,47 +20,63 @@ namespace SpyVsSpy
 
 		}
 
+		/** TOTO DAME PREC
 		// translates position on the 2D floor plan to real coordinates of the picture
 		public static Coordinates FloorCoordsToPictureCoords(int x, int y)
 		{
-			int new_x = (100 - y) + (300 + 2*y)/100 * x;		// floor starts at offset 100-y from left edge, width of floor at that position is 300+2*y
-			int new_y = 100 + y;								// height of floor in the view is 100 and its farthes edge is coordinate 100
+			int new_x = (100 - y) + (300 + 2*y)/100 * x - 50;		// floor starts at offset 100-y from left edge, width of floor at that position is 300+2*y
+			int new_y = 100 + y - 100;								// height of floor in the view is 100 and its farthes edge is coordinate 100
 			return new Coordinates(new_x, new_y);
 		}
+		**/
 
+		// handles events when key is pressed
 		public static void EventOnKeyPress(char key)
 		{
 			switch (key)
 			{
 				case 'W': human.MovePlayer('U'); break;
+				case 'S': human.MovePlayer('D'); break;
+				case 'A': human.MovePlayer('L'); break;
+				case 'D': human.MovePlayer('R'); break;
 			}
 		}
 
 		public static void Initialize(Form1 parent)
 		{
-
+			human = new Player(parent);
+			UI.CreatePictureBox("../../Assets/Images/roomB.png", new Coordinates(0, 0), 500, 200, parent);
 		}
 	}
 
 	public class Player
 	{
-		Position playerPosition = new Position();
+		Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 101));
 		bool alive = true;
-		PictureBox pictureBox;
+		PictureBox playerImage;
+
+		public Player(Form1 parent)
+		{
+			playerImage = UI.CreatePictureBox("../../Assets/Images/placeholderPlayer.png", playerPosition.floorCoordinates, 50, 100, parent);
+		}
 
 		// moves player in given direction and updates his position on the screen
 		public void MovePlayer(char direction)
 		{
+			Coordinates newCoords = new Coordinates(playerPosition.floorCoordinates.x, playerPosition.floorCoordinates.y);
 			switch (direction)
 			{
-				case 'U': playerPosition.posX -= 5; break;
-				case 'D': playerPosition.posX += 5; break;
-				case 'L': playerPosition.posY -= 5; break;
-				case 'R': playerPosition.posY += 5; break;
+				case 'U': newCoords.y -= 5; break;
+				case 'D': newCoords.y += 5; break;
+				case 'L': newCoords.x -= 5; break;
+				case 'R': newCoords.x += 5; break;
 			}
 
-			Coordinates screenCoords = Game.FloorCoordsToPictureCoords(playerPosition.posX, playerPosition.posY);
-			UI.ChangePictureBoxLocation(pictureBox, screenCoords);
+			if (Coordinates.CheckIfValidFloorPosition(newCoords, 0, 0))
+			{
+				playerPosition.floorCoordinates = newCoords;
+				UI.ChangePictureBoxLocation(playerImage, playerPosition.floorCoordinates);
+			}
 		}
 	}
 
@@ -74,9 +90,16 @@ namespace SpyVsSpy
 		public int floor;
 		public int roomX;
 		public int roomY;
-		public int posX;
-		public int posY;
+		public Coordinates floorCoordinates;
 		
+		public Position(int floor, int roomX, int roomY, Coordinates floorCoordinates)
+		{
+			this.floor = floor;
+			this.roomX = roomX;
+			this.roomY = roomY;
+			this.floorCoordinates = floorCoordinates;
+		}
+
 		// compares two positions and compares them
 		// parameter type specifies the type of comparison: 
 		// 'f' returns true if positions are on the same [f]loor,
@@ -89,7 +112,7 @@ namespace SpyVsSpy
 				case 'f': return p1.floor == p2.floor;
 				case 'r': return p1.floor == p2.floor && p1.roomX == p2.roomX && p1.roomY == p2.roomY;
 				case 'e': return p1.floor == p2.floor && p1.roomX == p2.roomX && p1.roomY == p2.roomY
-						&& p1.posX == p2.posX && p1.posY == p2.posY;
+						&& p1.floorCoordinates == p2.floorCoordinates;
 				default: return false;
 			}
 		}
@@ -106,6 +129,14 @@ namespace SpyVsSpy
 		{
 			this.x = x;
 			this.y = y;
+		}
+
+		// TODO player coordinates will always include the starting point of background AND take into account height&width
+		// returns true if given position is on the floor
+		// backgroundX and backgroundY are parameters specifying the position of upper left corner of background
+		public static bool CheckIfValidFloorPosition(Coordinates coords, int backgroundX, int backgroundY)
+		{
+			return (coords.x > 100-coords.y+100 && coords.x < 400 + coords.y-100) && (coords.y + backgroundY > 100 && coords.y + backgroundY < 200);
 		}
 	}
 
@@ -143,6 +174,7 @@ namespace SpyVsSpy
 			PictureBox pb = new PictureBox();
 			pb.ImageLocation = path;
 			pb.Size = new Size(width, height);
+			pb.SizeMode = PictureBoxSizeMode.AutoSize;
 			pb.Location = new Point(coords.x, coords.y);
 			parent.Controls.Add(pb);
 			return pb;
@@ -186,6 +218,8 @@ namespace SpyVsSpy
 			//PictureBox player = UI.CreatePictureBox("../../Assets/Images/placeholderPlayer.png", new Coordinates(100, 100), 50, 100, this);
 			//PictureBox background = UI.CreatePictureBox("../../Assets/Images/roomO.png", new Coordinates(0, 0), 500, 200, this);
 			//UI.ChangePictureBoxLocation(player, new Coordinates(200, 100);
+			//this.Size = new Size(500, 250);
+			Game.Initialize(this);
 		}
 	}
 }
