@@ -20,16 +20,6 @@ namespace SpyVsSpy
 
 		}
 
-		/** TOTO DAME PREC
-		// translates position on the 2D floor plan to real coordinates of the picture
-		public static Coordinates FloorCoordsToPictureCoords(int x, int y)
-		{
-			int new_x = (100 - y) + (300 + 2*y)/100 * x - 50;		// floor starts at offset 100-y from left edge, width of floor at that position is 300+2*y
-			int new_y = 100 + y - 100;								// height of floor in the view is 100 and its farthes edge is coordinate 100
-			return new Coordinates(new_x, new_y);
-		}
-		**/
-
 		// handles events when key is pressed
 		public static void EventOnKeyPress(char key)
 		{
@@ -44,8 +34,8 @@ namespace SpyVsSpy
 
 		public static void Initialize(Form1 parent)
 		{
-			human = new Player(parent);
-			UI.CreatePictureBox("../../Assets/Images/roomB.png", new Coordinates(0, 0), 500, 200, parent);
+			PictureBox background = UI.CreatePictureBox(UI.baseImageAddress + "roomB.png", new Coordinates(0, 0), 500, 200, parent);
+			human = new Player(parent, background);
 		}
 	}
 
@@ -55,9 +45,12 @@ namespace SpyVsSpy
 		bool alive = true;
 		PictureBox playerImage;
 
-		public Player(Form1 parent)
+		public Player(Form1 parent, PictureBox background)
 		{
-			playerImage = UI.CreatePictureBox("../../Assets/Images/placeholderPlayer.png", playerPosition.floorCoordinates, 50, 100, parent);
+			playerImage = UI.CreatePictureBox(UI.baseImageAddress + "playerWhite.png", playerPosition.floorCoordinates, 40, 40, parent);
+			// the following two lines are necessary so that the player has a transparent background
+			background.Controls.Add(playerImage);
+			background.BackColor = Color.Transparent;
 		}
 
 		// moves player in given direction and updates his position on the screen
@@ -148,6 +141,8 @@ namespace SpyVsSpy
 
 	public class UI
 	{
+		public static string baseImageAddress = "../../Assets/Images/";
+		public static Image transparentBackground = Image.FromFile(baseImageAddress + "transparentPlayerBackground.png");
 		// stops the application for the given amount of miliseconds
 		public static void Wait(int miliseconds)
 		{
