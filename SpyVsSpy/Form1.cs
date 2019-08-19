@@ -113,6 +113,7 @@ namespace SpyVsSpy
 
 	}
 
+	// handling the position of objects on the floor
 	public class Coordinates
 	{
 		public int x;
@@ -124,12 +125,21 @@ namespace SpyVsSpy
 			this.y = y;
 		}
 
-		// TODO player coordinates will always include the starting point of background AND take into account height&width
 		// returns true if given position is on the floor
 		// backgroundX and backgroundY are parameters specifying the position of upper left corner of background
 		public static bool CheckIfValidFloorPosition(Coordinates coords, int backgroundX, int backgroundY)
 		{
-			return (coords.x > 100-coords.y+100 && coords.x < 400 + coords.y-100) && (coords.y + backgroundY > 100 && coords.y + backgroundY < 200);
+			// for horizontal coordinates, the limit is calculated this way:
+			// backgroundX gives the margin from the 0th horizontal coordinate, therefore we have to factor it in
+			// the distance of the line on the left/right side of the floor from the respective edge is the same
+			// as the distance from the top line, which gives us 100-(coords.y-100) and 400+(coords.y-100) respectively
+			// but then we have to take into account that coordinates give the location of the upper left corner of the player,
+			// when we want the lower left/right corner
+			// so we add an arbitrary number so that it works out
+			return (coords.x > backgroundX + 100 - (coords.y - 50) && coords.x < backgroundX + 400 + (coords.y - 85)) &&	
+				// and for vertical limit, the player's feet (coords.y+40) must be at least at 100pts from the top of the room (backgroundY+100)
+				// and at most at 200pts from the top of the room (backgroundY+200)
+				(coords.y + 40 > backgroundY + 100 && coords.y + 40 < backgroundY + 200);				
 		}
 	}
 
@@ -139,10 +149,11 @@ namespace SpyVsSpy
 		char trapSet;
 	}
 
+	// UI functionality
 	public class UI
 	{
 		public static string baseImageAddress = "../../Assets/Images/";
-		public static Image transparentBackground = Image.FromFile(baseImageAddress + "transparentPlayerBackground.png");
+
 		// stops the application for the given amount of miliseconds
 		public static void Wait(int miliseconds)
 		{
