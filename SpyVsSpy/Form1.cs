@@ -53,11 +53,12 @@ namespace SpyVsSpy
 			}
 		}
 
+		// FOR NOW JUST FOR TESTING
 		public static void Initialize(Form1 parent)
 		{
 			currentRoom = new Room();
 			currentRoom.AddFurniture(5, parent);
-			currentRoom.AddDoor(1, parent);
+			currentRoom.AddDoor(3, parent);
 			PictureBox background = UI.CreatePictureBox(UI.baseImageAddress + "roomB.png", new Coordinates(0, 0), 500, 200, parent);
 			human = new Player(parent, background);
 		}
@@ -151,7 +152,7 @@ namespace SpyVsSpy
 		}
 
 		// calculates position of the furniture on the screen
-		private void CalculateImagePosition()
+		void CalculateImagePosition()
 		{
 			switch (type)
 			{
@@ -165,7 +166,7 @@ namespace SpyVsSpy
 		}
 
 		// sets the variable fileName according to furniture type
-		private void SetFilename()
+		void SetFilename()
 		{
 			switch (type)
 			{
@@ -199,6 +200,7 @@ namespace SpyVsSpy
 			doorImage.BringToFront();
 		}
 
+		// closes the door if open and vice versa
 		public void Switch()
 		{
 			if (open)
@@ -240,7 +242,7 @@ namespace SpyVsSpy
 				case 0: imagePosition = new Coordinates(20, 70); break;
 				case 1: imagePosition = new Coordinates(220, 20); break;
 				case 2: imagePosition = new Coordinates(450, 70); break;
-				case 3: imagePosition = new Coordinates(210, 185); break;
+				case 3: imagePosition = new Coordinates(210, 195); break;
 			}
 		}
 
@@ -335,6 +337,7 @@ namespace SpyVsSpy
 		}
 	}
 
+	// keeps track of furniture, doors, traps and objects in the room
 	public class Room
 	{
 		public Furniture[] furnitures = new Furniture[6];
@@ -366,11 +369,13 @@ namespace SpyVsSpy
 			return -1;
 		}
 
+		// adds a piece of furniture to room  !!! TO BE CHANGED !!!
 		public void AddFurniture(int i, Form1 parent)
 		{
 			furnitures[i] = new Furniture(i, parent);
 		}
 
+		// adds a door to room !!! TO BE CHANGED !!!
 		public void AddDoor(int i, Form1 parent)
 		{
 			doors[i] = new Door(i, parent);
