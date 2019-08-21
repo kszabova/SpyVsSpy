@@ -32,7 +32,7 @@ namespace SpyVsSpy
 				case 'A': human.MovePlayer('L'); break;
 				case 'D': human.MovePlayer('R'); break;
 
-				// examining furniture
+				// examining furniture and opening doors
 				case 'X':
 					int closeFurniture = currentRoom.FurnitureNearby(human.playerPosition.floorCoordinates);
 					if (closeFurniture != -1)
@@ -40,6 +40,14 @@ namespace SpyVsSpy
 						currentRoom.furnitures[closeFurniture].Lift();
 						UI.Wait(500);
 						currentRoom.furnitures[closeFurniture].Release();
+					}
+					else
+					{
+						int closeDoors = currentRoom.DoorNearby(human.playerPosition.floorCoordinates);
+						if (closeDoors != -1)
+						{
+							currentRoom.doors[closeDoors].Switch();
+						}
 					}
 					break;
 			}
@@ -49,6 +57,7 @@ namespace SpyVsSpy
 		{
 			currentRoom = new Room();
 			currentRoom.AddFurniture(5, parent);
+			currentRoom.AddDoor(1, parent);
 			PictureBox background = UI.CreatePictureBox(UI.baseImageAddress + "roomB.png", new Coordinates(0, 0), 500, 200, parent);
 			human = new Player(parent, background);
 		}
@@ -176,15 +185,26 @@ namespace SpyVsSpy
 		int location;	// possible values 0-3, in the middle of each wall
 		int leadsTo;
 		bool open;
+		string openFileName;
+		string closedFileName;
+		PictureBox doorImage;
+		Coordinates imagePosition;
 
-		public void Open()
+		public Door(int location, Form1 parent)
 		{
-
+			this.location = location;
+			CalculateImagePosition();
+			SetFilename();
+			doorImage = UI.CreatePictureBox(UI.baseImageAddress + closedFileName, imagePosition, 60, 80, parent);
+			doorImage.BringToFront();
 		}
 
-		public void Close()
+		public void Switch()
 		{
-
+			if (open)
+				Close();
+			else
+				Open();
 		}
 
 		// returns true if position is in front of a specific door
@@ -197,6 +217,54 @@ namespace SpyVsSpy
 				case 2: return position.x > (390 - position.y - 100) && position.y > 150 && position.y < 180;	// right wall
 				case 3: return position.x > 220 && position.x < 280 && position.y > 190 && position.y < 200;    // front (invisible) wall
 				default: return false;
+			}
+		}
+
+		void Open()
+		{
+			UI.ChangeImageInPictureBox(doorImage, UI.baseImageAddress + openFileName);
+			open = true;
+		}
+
+		void Close()
+		{
+			UI.ChangeImageInPictureBox(doorImage, UI.baseImageAddress + closedFileName);
+			open = false;
+		}
+
+		// calculates where the door will be placed on screen
+		void CalculateImagePosition()
+		{
+			switch (location)
+			{
+				case 0: imagePosition = new Coordinates(20, 70); break;
+				case 1: imagePosition = new Coordinates(220, 20); break;
+				case 2: imagePosition = new Coordinates(450, 70); break;
+				case 3: imagePosition = new Coordinates(210, 185); break;
+			}
+		}
+
+		// sets the filename variable depending on type of door
+		void SetFilename()
+		{
+			switch (location)
+			{
+				case 0:
+					closedFileName = "doorLeftClosed.png";
+					openFileName = "doorLeftOpen.png";
+					break;
+				case 1:
+					closedFileName = "doorBackClosed.png";
+					openFileName = "doorBackOpen.png";
+					break;
+				case 2:
+					closedFileName = "doorRightClosed.png";
+					openFileName = "doorRightOpen.png";
+					break;
+				case 3:
+					closedFileName = "doorFrontClosed.png";
+					openFileName = "doorFrontOpen.png";
+					break;
 			}
 		}
 	}
@@ -270,7 +338,7 @@ namespace SpyVsSpy
 	public class Room
 	{
 		public Furniture[] furnitures = new Furniture[6];
-		Door[] doors = new Door[4];
+		public Door[] doors = new Door[4];
 
 		// returns the number of furniture next to which the player is standing, -1 if none
 		public int FurnitureNearby(Coordinates playerPosition)
@@ -286,7 +354,7 @@ namespace SpyVsSpy
 		}
 
 		// returns the number of door in front of which the player is standing, -1 if none
-		public int DdoorNearby(Coordinates playerPosition)
+		public int DoorNearby(Coordinates playerPosition)
 		{
 			for (int i = 0; i < 4; ++i)
 			{
@@ -301,6 +369,11 @@ namespace SpyVsSpy
 		public void AddFurniture(int i, Form1 parent)
 		{
 			furnitures[i] = new Furniture(i, parent);
+		}
+
+		public void AddDoor(int i, Form1 parent)
+		{
+			doors[i] = new Door(i, parent);
 		}
 	}
 
