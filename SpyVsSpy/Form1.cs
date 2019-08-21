@@ -14,6 +14,7 @@ namespace SpyVsSpy
 	public class Game
 	{
 		public static Player human;
+		public static Room currentRoom;
 
 		public static void LoadMapFromFile()
 		{
@@ -25,17 +26,29 @@ namespace SpyVsSpy
 		{
 			switch (key)
 			{
+				// movement
 				case 'W': human.MovePlayer('U'); break;
 				case 'S': human.MovePlayer('D'); break;
 				case 'A': human.MovePlayer('L'); break;
 				case 'D': human.MovePlayer('R'); break;
+
+				// examining furniture
+				case 'X':
+					int closeFurniture = currentRoom.FurnitureNearby(human.playerPosition.floorCoordinates);
+					if (closeFurniture != -1)
+					{
+						currentRoom.furnitures[closeFurniture].Lift();
+						UI.Wait(500);
+						currentRoom.furnitures[closeFurniture].Release();
+					}
+					break;
 			}
 		}
 
 		public static void Initialize(Form1 parent)
 		{
-			Room r = new Room();
-			r.AddFurniture(5, parent);
+			currentRoom = new Room();
+			currentRoom.AddFurniture(5, parent);
 			PictureBox background = UI.CreatePictureBox(UI.baseImageAddress + "roomB.png", new Coordinates(0, 0), 500, 200, parent);
 			human = new Player(parent, background);
 		}
@@ -44,7 +57,7 @@ namespace SpyVsSpy
 	// player functionality
 	public class Player
 	{
-		Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 141));
+		public Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 141));
 		Coordinates playerImageCoordinates = new Coordinates(0, 0);
 		bool alive = true;
 		public PictureBox playerImage;
@@ -105,12 +118,12 @@ namespace SpyVsSpy
 
 		public void Lift()
 		{
-
+			UI.ChangePictureBoxLocation(furnitureImage, new Coordinates(imagePosition.x, imagePosition.y - 15));
 		}
 
 		public void Release()
 		{
-
+			UI.ChangePictureBoxLocation(furnitureImage, imagePosition);
 		}
 
 		// returns whether position is close to a specific type of furniture
@@ -256,7 +269,7 @@ namespace SpyVsSpy
 
 	public class Room
 	{
-		Furniture[] furnitures = new Furniture[6];
+		public Furniture[] furnitures = new Furniture[6];
 		Door[] doors = new Door[4];
 
 		// returns the number of furniture next to which the player is standing, -1 if none
@@ -352,6 +365,7 @@ namespace SpyVsSpy
 				case Keys.Down: case Keys.S: Game.EventOnKeyPress('S'); break;
 				case Keys.Left: case Keys.A: Game.EventOnKeyPress('A'); break;
 				case Keys.Right: case Keys.D: Game.EventOnKeyPress('D'); break;
+				case Keys.X: Game.EventOnKeyPress('X'); break;
 			}
 			return base.ProcessCmdKey(ref msg, keyData);
 		}
