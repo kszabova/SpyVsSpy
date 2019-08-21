@@ -34,11 +34,10 @@ namespace SpyVsSpy
 
 		public static void Initialize(Form1 parent)
 		{
-			PictureBox cabinet = UI.CreatePictureBox(UI.baseImageAddress + "cabinetFrontView.png", new Coordinates(150, 30), 100, 70, parent);
+			Room r = new Room();
+			r.AddFurniture(5, parent);
 			PictureBox background = UI.CreatePictureBox(UI.baseImageAddress + "roomB.png", new Coordinates(0, 0), 500, 200, parent);
 			human = new Player(parent, background);
-			background.Controls.Add(cabinet);
-			human.playerImage.BringToFront();
 		}
 	}
 
@@ -90,7 +89,19 @@ namespace SpyVsSpy
 	// handles furniture behavior
 	public class Furniture
 	{
-		public int type;	// from left (0) to right (5): bookcase, table, coat rack, shelf, microwave, drawer
+		public int type;    // from left (0) to right (5): bookcase, table, coat rack, shelf, microwave, drawer
+		PictureBox furnitureImage;
+		Coordinates imagePosition;
+		string filename;
+
+		public Furniture(int type, Form1 parent)
+		{
+			this.type = type;
+			CalculateImagePosition();
+			SetFilename();
+			furnitureImage = UI.CreatePictureBox(UI.baseImageAddress + filename, imagePosition, 60, 110, parent);
+			furnitureImage.BringToFront();
+		}
 
 		public void Lift()
 		{
@@ -103,7 +114,7 @@ namespace SpyVsSpy
 		}
 
 		// returns whether position is close to a specific type of furniture
-		public static bool positionInRangeOfFurniture(int type, Coordinates position)
+		public static bool PositionInRangeOfFurniture(int type, Coordinates position)
 		{
 			switch (type)
 			{
@@ -114,6 +125,34 @@ namespace SpyVsSpy
 				case 4: return position.x > 285 && position.x < 365 && position.y > 100 && position.y < 120;						// microwave
 				case 5: return position.x < (400 + position.y - 100) && position.x > (380 + position.y - 100) && position.y < 140;	// drawer
 				default: return false;
+			}
+		}
+
+		// calculates position of the furniture on the screen
+		private void CalculateImagePosition()
+		{
+			switch (type)
+			{
+				case 0: imagePosition = new Coordinates(50, 30); break;		// bookcase
+				case 1: imagePosition = new Coordinates(130, 40); break;	// desk
+				case 2: imagePosition = new Coordinates(150, 30); break;	// coat rack
+				case 3: imagePosition = new Coordinates(250, 50); break;	// shelf
+				case 4: imagePosition = new Coordinates(285, 50); break;	// microwave
+				case 5: imagePosition = new Coordinates(380, 30); break;	// drawer
+			}
+		}
+
+		// sets the variable fileName according to furniture type
+		private void SetFilename()
+		{
+			switch (type)
+			{
+				case 0: filename = "bookcase.png"; break;
+				case 1: filename = "desk.png"; break;
+				case 2: filename = "coatrack.png"; break;
+				case 3: filename = "shelf.png"; break;
+				case 4: filename = "microwave.png"; break;
+				case 5: filename = "cabinetRight.png"; break;	// TEMPORARY
 			}
 		}
 	}
@@ -225,12 +264,17 @@ namespace SpyVsSpy
 		{
 			for (int i = 0; i < 6; ++i)
 			{
-				if (furnitures[i] != null && Furniture.positionInRangeOfFurniture(i, playerPosition))
+				if (furnitures[i] != null && Furniture.PositionInRangeOfFurniture(i, playerPosition))
 				{
 					return i;
 				}
 			}
 			return -1;
+		}
+
+		public void AddFurniture(int i, Form1 parent)
+		{
+			furnitures[i] = new Furniture(i, parent);
 		}
 
 		// returns the number of door in front of which the player is standing, -1 if none
