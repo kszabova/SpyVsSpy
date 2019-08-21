@@ -175,7 +175,7 @@ namespace SpyVsSpy
 		}
 
 		// returns true if position is in front of a specific door
-		public static bool positionInRangeOfDoor(int location, Coordinates position)
+		public static bool PositionInRangeOfDoor(int location, Coordinates position)
 		{
 			switch (location)
 			{
@@ -260,7 +260,7 @@ namespace SpyVsSpy
 		Door[] doors = new Door[4];
 
 		// returns the number of furniture next to which the player is standing, -1 if none
-		public int furnitureNearby(Coordinates playerPosition)
+		public int FurnitureNearby(Coordinates playerPosition)
 		{
 			for (int i = 0; i < 6; ++i)
 			{
@@ -272,22 +272,22 @@ namespace SpyVsSpy
 			return -1;
 		}
 
-		public void AddFurniture(int i, Form1 parent)
-		{
-			furnitures[i] = new Furniture(i, parent);
-		}
-
 		// returns the number of door in front of which the player is standing, -1 if none
-		public int doorNearby(Coordinates playerPosition)
+		public int DdoorNearby(Coordinates playerPosition)
 		{
 			for (int i = 0; i < 4; ++i)
 			{
-				if (doors[i] != null && Door.positionInRangeOfDoor(i, playerPosition))
+				if (doors[i] != null && Door.PositionInRangeOfDoor(i, playerPosition))
 				{
 					return i;
 				}
 			}
 			return -1;
+		}
+
+		public void AddFurniture(int i, Form1 parent)
+		{
+			furnitures[i] = new Furniture(i, parent);
 		}
 	}
 
