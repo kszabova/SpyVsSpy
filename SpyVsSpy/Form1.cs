@@ -42,15 +42,18 @@ namespace SpyVsSpy
 		}
 	}
 
+	// player functionality
 	public class Player
 	{
-		Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 101));
+		Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 141));
+		Coordinates playerImageCoordinates = new Coordinates(0, 0);
 		bool alive = true;
 		public PictureBox playerImage;
 
 		public Player(Form1 parent, PictureBox background)
 		{
-			playerImage = UI.CreatePictureBox(UI.baseImageAddress + "playerWhite.png", playerPosition.floorCoordinates, 40, 40, parent);
+			UpdatePlayerImageCoordinates();
+			playerImage = UI.CreatePictureBox(UI.baseImageAddress + "playerWhite.png", playerImageCoordinates, 40, 40, parent);
 			// the following two lines are necessary so that the player has a transparent background
 			background.Controls.Add(playerImage);
 			background.BackColor = Color.Transparent;
@@ -71,14 +74,23 @@ namespace SpyVsSpy
 			if (Coordinates.CheckIfValidFloorPosition(newCoords, 0, 0))
 			{
 				playerPosition.floorCoordinates = newCoords;
-				UI.ChangePictureBoxLocation(playerImage, playerPosition.floorCoordinates);
+				UpdatePlayerImageCoordinates();
+				UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);
 			}
+		}
+
+		// updates the coordinates of playerImage when playerPosition changes
+		private void UpdatePlayerImageCoordinates()
+		{
+			playerImageCoordinates.x = playerPosition.floorCoordinates.x - 20;
+			playerImageCoordinates.y = playerPosition.floorCoordinates.y - 40;
 		}
 	}
 
+	// handles furniture behavior
 	public class Furniture
 	{
-		public int type;
+		public int type;	// from left (0) to right (5): bookcase, table, coat rack, shelf, microwave, drawer
 
 		public void Lift()
 		{
@@ -106,11 +118,35 @@ namespace SpyVsSpy
 		}
 	}
 
+	// handles door behavior
 	public class Door
 	{
-		int location;
+		int location;	// possible values 0-3, in the middle of each wall
 		int leadsTo;
 		bool open;
+
+		public void Open()
+		{
+
+		}
+
+		public void Close()
+		{
+
+		}
+
+		// returns true if position is in front of a specific door
+		public static bool positionInRangeOfDoor(int location, Coordinates position)
+		{
+			switch (location)
+			{
+				case 0: return position.x < (110 - position.y + 100) && position.y > 150 && position.y < 180;	// left wall
+				case 1: return position.x > 220 && position.x < 280 && position.y > 100 && position.y < 110;    // back wall
+				case 2: return position.x > (390 - position.y - 100) && position.y > 150 && position.y < 180;	// right wall
+				case 3: return position.x > 220 && position.x < 280 && position.y > 190 && position.y < 200;    // front (invisible) wall
+				default: return false;
+			}
+		}
 	}
 
 	public class Trap
@@ -170,23 +206,19 @@ namespace SpyVsSpy
 		public static bool CheckIfValidFloorPosition(Coordinates coords, int backgroundX, int backgroundY)
 		{
 			// for horizontal coordinates, the limit is calculated this way:
-			// backgroundX gives the margin from the 0th horizontal coordinate, therefore we have to factor it in
+			// backgroundX gives the margin from 0, therefore we have to factor it in;
 			// the distance of the line on the left/right side of the floor from the respective edge is the same
-			// as the distance from the top line, which gives us 100-(coords.y-100) and 400+(coords.y-100) respectively
-			// but then we have to take into account that coordinates give the location of the upper left corner of the player,
-			// when we want the lower left/right corner
-			// so we add an arbitrary number so that it works out
-			return (coords.x > backgroundX + 100 - (coords.y - 50) && coords.x < backgroundX + 400 + (coords.y - 85)) &&	
-				// and for vertical limit, the player's feet (coords.y+40) must be at least at 100pts from the top of the room (backgroundY+100)
-				// and at most at 200pts from the top of the room (backgroundY+200)
-				(coords.y + 40 > backgroundY + 100 && coords.y + 40 < backgroundY + 200);				
+			// as the distance from the top floor line, which gives us 100-(coords.y-100) and 400+(coords.y-100) respectively
+			return (coords.x > backgroundX + 200 - coords.y && coords.x < backgroundX + 300 + coords.y) &&
+				// vertically, the player must be between 100 and 200
+				(coords.y > backgroundY + 100 && coords.y < backgroundY + 200);				
 		}
 	}
 
 	public class Room
 	{
 		Furniture[] furnitures = new Furniture[6];
-		Door[] doors;
+		Door[] doors = new Door[4];
 
 		// returns the number of furniture next to which the player is standing, -1 if none
 		public int furnitureNearby(Coordinates playerPosition)
@@ -194,6 +226,19 @@ namespace SpyVsSpy
 			for (int i = 0; i < 6; ++i)
 			{
 				if (furnitures[i] != null && Furniture.positionInRangeOfFurniture(i, playerPosition))
+				{
+					return i;
+				}
+			}
+			return -1;
+		}
+
+		// returns the number of door in front of which the player is standing, -1 if none
+		public int doorNearby(Coordinates playerPosition)
+		{
+			for (int i = 0; i < 4; ++i)
+			{
+				if (doors[i] != null && Door.positionInRangeOfDoor(i, playerPosition))
 				{
 					return i;
 				}
