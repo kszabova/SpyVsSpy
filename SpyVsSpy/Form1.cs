@@ -34,8 +34,11 @@ namespace SpyVsSpy
 
 		public static void Initialize(Form1 parent)
 		{
+			PictureBox cabinet = UI.CreatePictureBox(UI.baseImageAddress + "cabinetFrontView.png", new Coordinates(150, 30), 100, 70, parent);
 			PictureBox background = UI.CreatePictureBox(UI.baseImageAddress + "roomB.png", new Coordinates(0, 0), 500, 200, parent);
 			human = new Player(parent, background);
+			background.Controls.Add(cabinet);
+			human.playerImage.BringToFront();
 		}
 	}
 
@@ -43,7 +46,7 @@ namespace SpyVsSpy
 	{
 		Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 101));
 		bool alive = true;
-		PictureBox playerImage;
+		public PictureBox playerImage;
 
 		public Player(Form1 parent, PictureBox background)
 		{
@@ -71,6 +74,43 @@ namespace SpyVsSpy
 				UI.ChangePictureBoxLocation(playerImage, playerPosition.floorCoordinates);
 			}
 		}
+	}
+
+	public class Furniture
+	{
+		public int type;
+
+		public void Lift()
+		{
+
+		}
+
+		public void Release()
+		{
+
+		}
+
+		// returns whether position is close to a specific type of furniture
+		public static bool positionInRangeOfFurniture(int type, Coordinates position)
+		{
+			switch (type)
+			{
+				case 0: return position.x > (100 - position.y + 100) && position.x < (120 - position.y + 100) && position.y < 150;	// bookcase
+				case 1: return position.x > 130 && position.x < 250 && position.y > 100 && position.y < 120;						// desk
+				case 2: return position.x > 150 && position.x < 200 && position.y > 100 && position.y < 120;						// coat rack
+				case 3: return position.x > 250 && position.x < 320 && position.y > 100 && position.y < 120;						// shelf
+				case 4: return position.x > 285 && position.x < 365 && position.y > 100 && position.y < 120;						// microwave
+				case 5: return position.x < (400 + position.y - 100) && position.x > (380 + position.y - 100) && position.y < 140;	// drawer
+				default: return false;
+			}
+		}
+	}
+
+	public class Door
+	{
+		int location;
+		int leadsTo;
+		bool open;
 	}
 
 	public class Trap
@@ -145,8 +185,21 @@ namespace SpyVsSpy
 
 	public class Room
 	{
-		int[,] floorPlan = new int[10, 10];
-		char trapSet;
+		Furniture[] furnitures = new Furniture[6];
+		Door[] doors;
+
+		// returns the number of furniture next to which the player is standing, -1 if none
+		public int furnitureNearby(Coordinates playerPosition)
+		{
+			for (int i = 0; i < 6; ++i)
+			{
+				if (furnitures[i] != null && Furniture.positionInRangeOfFurniture(i, playerPosition))
+				{
+					return i;
+				}
+			}
+			return -1;
+		}
 	}
 
 	// UI functionality
