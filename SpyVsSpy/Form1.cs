@@ -57,8 +57,6 @@ namespace SpyVsSpy
 		public static void Initialize(Form1 parent)
 		{
 			currentRoom = new Room();
-			currentRoom.AddFurniture(5, parent);
-			currentRoom.AddDoor(3, parent);
 			PictureBox background = UI.CreatePictureBox(UI.baseImageAddress + "roomB.png", new Coordinates(0, 0), 500, 200, parent);
 			human = new Player(parent, background);
 		}
@@ -157,10 +155,10 @@ namespace SpyVsSpy
 			switch (type)
 			{
 				case 0: imagePosition = new Coordinates(50, 30); break;		// bookcase
-				case 1: imagePosition = new Coordinates(130, 40); break;	// desk
-				case 2: imagePosition = new Coordinates(150, 30); break;	// coat rack
-				case 3: imagePosition = new Coordinates(250, 50); break;	// shelf
-				case 4: imagePosition = new Coordinates(285, 50); break;	// microwave
+				case 1: imagePosition = new Coordinates(130, 50); break;	// desk
+				case 2: imagePosition = new Coordinates(150, 40); break;	// coat rack
+				case 3: imagePosition = new Coordinates(250, 60); break;	// shelf
+				case 4: imagePosition = new Coordinates(285, 60); break;	// microwave
 				case 5: imagePosition = new Coordinates(380, 30); break;	// drawer
 			}
 		}
@@ -175,7 +173,7 @@ namespace SpyVsSpy
 				case 2: filename = "coatrack.png"; break;
 				case 3: filename = "shelf.png"; break;
 				case 4: filename = "microwave.png"; break;
-				case 5: filename = "cabinetRight.png"; break;	// TEMPORARY
+				case 5: filename = "drawer.png"; break;	// TEMPORARY
 			}
 		}
 	}
