@@ -56,9 +56,12 @@ namespace SpyVsSpy
 		// FOR NOW JUST FOR TESTING
 		public static void Initialize(Form1 parent)
 		{
-			currentRoom = new Room();
-			PictureBox background = UI.CreatePictureBox(UI.baseImageAddress + "roomB.png", new Coordinates(0, 0), 500, 200, parent);
-			human = new Player(parent, background);
+			PictureBox upperFrame = UI.CreatePictureBox("placeholderBackground.png", new Coordinates(20, 20), 500, 200, parent);
+			currentRoom = new Room('Y', upperFrame);
+			currentRoom.AddDoor(1, parent);
+			currentRoom.AddFurniture(0, parent);
+			human = new Player(parent, upperFrame);
+			currentRoom.LoadRoom();
 		}
 	}
 
@@ -73,7 +76,7 @@ namespace SpyVsSpy
 		public Player(Form1 parent, PictureBox background)
 		{
 			UpdatePlayerImageCoordinates();
-			playerImage = UI.CreatePictureBox(UI.baseImageAddress + "playerWhite.png", playerImageCoordinates, 40, 40, parent);
+			playerImage = UI.CreatePictureBox("playerWhite.png", playerImageCoordinates, 40, 40, parent);
 			// the following two lines are necessary so that the player has a transparent background
 			background.Controls.Add(playerImage);
 			background.BackColor = Color.Transparent;
@@ -120,7 +123,7 @@ namespace SpyVsSpy
 			this.type = type;
 			CalculateImagePosition();
 			SetFilename();
-			furnitureImage = UI.CreatePictureBox(UI.baseImageAddress + filename, imagePosition, 60, 110, parent);
+			furnitureImage = UI.CreatePictureBox(filename, imagePosition, 60, 110, parent);
 			furnitureImage.BringToFront();
 		}
 
@@ -132,6 +135,16 @@ namespace SpyVsSpy
 		public void Release()
 		{
 			UI.ChangePictureBoxLocation(furnitureImage, imagePosition);
+		}
+
+		public void Show()
+		{
+			UI.ChangePictureBoxVisibility(furnitureImage, true);
+		}
+
+		public void Hide()
+		{
+			UI.ChangePictureBoxVisibility(furnitureImage, false);
 		}
 
 		// returns whether position is close to a specific type of furniture
@@ -161,6 +174,8 @@ namespace SpyVsSpy
 				case 4: imagePosition = new Coordinates(285, 60); break;	// microwave
 				case 5: imagePosition = new Coordinates(380, 30); break;	// drawer
 			}
+			imagePosition.x += UI.upperFrameMargin.X;
+			imagePosition.y += UI.upperFrameMargin.Y;
 		}
 
 		// sets the variable fileName according to furniture type
@@ -194,7 +209,7 @@ namespace SpyVsSpy
 			this.location = location;
 			CalculateImagePosition();
 			SetFilename();
-			doorImage = UI.CreatePictureBox(UI.baseImageAddress + closedFileName, imagePosition, 60, 80, parent);
+			doorImage = UI.CreatePictureBox(closedFileName, imagePosition, 60, 80, parent);
 			doorImage.BringToFront();
 		}
 
@@ -205,6 +220,18 @@ namespace SpyVsSpy
 				Close();
 			else
 				Open();
+		}
+
+		// makes the door visible
+		public void Show()
+		{
+			UI.ChangePictureBoxVisibility(doorImage, true);
+		}
+
+		// makes the door invisible
+		public void Hide()
+		{
+			UI.ChangePictureBoxVisibility(doorImage, false);
 		}
 
 		// returns true if position is in front of a specific door
@@ -220,17 +247,20 @@ namespace SpyVsSpy
 			}
 		}
 
+		// switches the image to that of open door
 		void Open()
 		{
-			UI.ChangeImageInPictureBox(doorImage, UI.baseImageAddress + openFileName);
+			UI.ChangeImageInPictureBox(doorImage, openFileName);
 			open = true;
 		}
 
+		// switches the image to closed
 		void Close()
 		{
-			UI.ChangeImageInPictureBox(doorImage, UI.baseImageAddress + closedFileName);
+			UI.ChangeImageInPictureBox(doorImage, closedFileName);
 			open = false;
 		}
+
 
 		// calculates where the door will be placed on screen
 		void CalculateImagePosition()
@@ -242,6 +272,8 @@ namespace SpyVsSpy
 				case 2: imagePosition = new Coordinates(450, 70); break;
 				case 3: imagePosition = new Coordinates(210, 195); break;
 			}
+			imagePosition.x += UI.upperFrameMargin.X;
+			imagePosition.y += UI.upperFrameMargin.Y;
 		}
 
 		// sets the filename variable depending on type of door
@@ -338,8 +370,55 @@ namespace SpyVsSpy
 	// keeps track of furniture, doors, traps and objects in the room
 	public class Room
 	{
+		char color;
+		PictureBox frame;
 		public Furniture[] furnitures = new Furniture[6];
 		public Door[] doors = new Door[4];
+
+		public Room(char color, PictureBox frame)
+		{
+			this.color = color;
+			this.frame = frame;
+		}
+
+		// loads background, furniture and doors into image
+		public void LoadRoom()
+		{
+			UI.ChangeImageInPictureBox(frame, RoomFilename());
+			foreach (Furniture f in furnitures)
+			{
+				if (f != null)
+				{
+					f.Show();
+				}
+			}
+			foreach (Door d in doors)
+			{
+				if (d != null)
+				{
+					d.Show();
+				}
+			}
+		}
+
+		// hides all furniture and doors
+		public void HideRoom()
+		{
+			foreach (Furniture f in furnitures)
+			{
+				if (f != null)
+				{
+					f.Hide();
+				}
+			}
+			foreach (Door d in doors)
+			{
+				if (d != null)
+				{
+					d.Hide();
+				}
+			}
+		}
 
 		// returns the number of furniture next to which the player is standing, -1 if none
 		public int FurnitureNearby(Coordinates playerPosition)
@@ -378,12 +457,20 @@ namespace SpyVsSpy
 		{
 			doors[i] = new Door(i, parent);
 		}
+
+		// returns the filename of background image depending on the color of room
+		string RoomFilename()
+		{
+			return "room" + color + ".png";
+		}
 	}
 
 	// UI functionality
 	public class UI
 	{
-		public static string baseImageAddress = "../../Assets/Images/";
+		static string baseImageAddress = "../../Assets/Images/";
+		public static Point upperFrameMargin = new Point(20, 20);
+		public static Point lowerFrameMargin = new Point(20, 240);
 
 		// stops the application for the given amount of miliseconds
 		public static void Wait(int miliseconds)
@@ -406,10 +493,10 @@ namespace SpyVsSpy
 		}
 
 		// creates a new PictureBox in the specified position and returns the PictureBox instance
-		public static PictureBox CreatePictureBox(string path, Coordinates coords, int width, int height, Form1 parent)
+		public static PictureBox CreatePictureBox(string filename, Coordinates coords, int width, int height, Form1 parent)
 		{
 			PictureBox pb = new PictureBox();
-			pb.ImageLocation = path;
+			pb.ImageLocation = baseImageAddress + filename;
 			pb.Size = new Size(width, height);
 			pb.SizeMode = PictureBoxSizeMode.AutoSize;
 			pb.Location = new Point(coords.x, coords.y);
@@ -418,15 +505,28 @@ namespace SpyVsSpy
 		}
 
 		// changes the image in given PictureBox
-		public static void ChangeImageInPictureBox(PictureBox pb, string path)
+		public static void ChangeImageInPictureBox(PictureBox pb, string filename)
 		{
-			pb.ImageLocation = path;
+			pb.ImageLocation = baseImageAddress + filename;
 		}
 		
 		// changes the location of given PictureBox
 		public static void ChangePictureBoxLocation(PictureBox pb, Coordinates coords)
 		{
 			pb.Location = new Point(coords.x, coords.y);
+		}
+
+		// makes PictureBox visible or invisible
+		public static void ChangePictureBoxVisibility(PictureBox pb, bool visibility)
+		{
+			if (visibility)
+			{
+				pb.Visible = true;
+			}
+			else
+			{
+				pb.Visible = false;
+			}
 		}
 	}
 
