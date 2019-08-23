@@ -283,22 +283,23 @@ namespace SpyVsSpy
 		{
 			switch (location)
 			{
-				case 0: return position.x < (110 - position.y + 100) && position.y > 150 && position.y < 180;	// left wall
-				case 1: return position.x > 220 && position.x < 280 && position.y > 100 && position.y < 110;    // back wall
-				case 2: return position.x > (390 - position.y - 100) && position.y > 150 && position.y < 180;	// right wall
-				case 3: return position.x > 220 && position.x < 280 && position.y > 190 && position.y < 200;    // front (invisible) wall
+				case 0: return position.x <= (110 - position.y + 100) && position.y >= 150 && position.y <= 180;	// left wall
+				case 1: return position.x >= 220 && position.x <= 280 && position.y >= 100 && position.y <= 110;    // back wall
+				case 2: return position.x >= (390 - position.y - 100) && position.y >= 150 && position.y <= 180;	// right wall
+				case 3: return position.x >= 210 && position.x <= 290 && position.y >= 190 && position.y <= 200;    // front (invisible) wall
 				default: return false;
 			}
 		}
 
+		// returns true if position is directly inside the door
 		public static bool PositionInDoor(int location, Coordinates position)
 		{
 			switch (location)
 			{
-				case 0: return position.x < 205 - position.y && position.y > 150 && position.y < 180;
-				case 1: return position.x > 220 && position.x < 280 && position.y > 100 && position.y < 105;
-				case 2: return position.x > (290 - position.y) && position.y > 150 && position.y < 180;
-				case 3: return position.x > 220 && position.x < 280 && position.y > 190; // && position.y < 200;
+				case 0: return position.x <= 205 - position.y && position.y >= 150 && position.y <= 180;
+				case 1: return position.x >= 220 && position.x <= 280 && position.y <= 105;
+				case 2: return position.x >= (295 - position.y) && position.y >= 150 && position.y <= 180;
+				case 3: return position.x >= 220 && position.x <= 280 && position.y > 190; // && position.y < 200;
 				default: return false;
 			}
 		}
@@ -416,9 +417,9 @@ namespace SpyVsSpy
 			// backgroundX gives the margin from 0, therefore we have to factor it in;
 			// the distance of the line on the left/right side of the floor from the respective edge is the same
 			// as the distance from the top floor line, which gives us 100-(coords.y-100) and 400+(coords.y-100) respectively
-			return (coords.x > backgroundX + 200 - coords.y && coords.x < backgroundX + 300 + coords.y) &&
+			return (coords.x >= backgroundX + 200 - coords.y && coords.x <= backgroundX + 300 + coords.y) &&
 				// vertically, the player must be between 100 and 200
-				(coords.y > backgroundY + 100 && coords.y < backgroundY + 200);				
+				(coords.y >= backgroundY + 100 && coords.y <= backgroundY + 200);				
 		}
 	}
 
