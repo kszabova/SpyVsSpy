@@ -106,6 +106,7 @@ namespace SpyVsSpy
 		{
 			Coordinates newCoords = new Coordinates(playerPosition.floorCoordinates.x, playerPosition.floorCoordinates.y);
 			int doorCrossed = -1;
+
 			switch (direction)
 			{
 				case 'U': newCoords.y -= 5; break;
@@ -114,8 +115,10 @@ namespace SpyVsSpy
 				case 'R': newCoords.x += 5; break;
 			}
 
+			// check if player is trying to cross a door
 			SetDoorBeingCrossed(newCoords, ref doorCrossed);
 
+			// check if player is within the limits of the floor, updates coordinates if so
 			if (Coordinates.CheckIfValidFloorPosition(newCoords, 0, 0))
 			{
 				playerPosition.floorCoordinates = newCoords;
@@ -123,10 +126,15 @@ namespace SpyVsSpy
 				UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);
 			}
 
+			// if player is crossing a door, loads the new room
 			if (doorCrossed != -1)
 			{
-				playerPosition.floorCoordinates = new Coordinates(250, 150);	/// !! TEMPORARY !!
-				UpdatePlayerImageCoordinates();
+				// update player's position
+				Coordinates newPosition = CalculatePositionAfterCrossingDoor(doorCrossed, playerPosition.floorCoordinates);
+				playerPosition.floorCoordinates = newPosition;
+				UpdatePlayerImageCoordinates();										// v
+				UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);   // make these two lines into a new function (Refresh?)
+				// load new room
 				Game.LoadRoomByDoor(doorCrossed);
 			}
 		}
@@ -148,6 +156,20 @@ namespace SpyVsSpy
 					doorCrossed = i;
 				}
 			}
+		}
+
+		// calculates new position of player after crossing door
+		Coordinates CalculatePositionAfterCrossingDoor(int door, Coordinates curCoords)
+		{
+			Coordinates newCoords = new Coordinates(curCoords.x, curCoords.y);		// set the position to the same as current, only update the wrong coordinate
+			switch (door)
+			{
+				case 0: newCoords.x = 295 + curCoords.y; break; // puts player 1px away from the wall
+				case 1: newCoords.y = 195; break;               // player appears at the bottom of the screen
+				case 2: newCoords.x = 205 - curCoords.y; break; // 1px away from the wall
+				case 3: newCoords.y = 101; break;				// directly in front of the top door
+			}
+			return newCoords;
 		}
 	}
 
@@ -296,10 +318,10 @@ namespace SpyVsSpy
 		{
 			switch (location)
 			{
-				case 0: return position.x <= 205 - position.y && position.y >= 150 && position.y <= 180;
-				case 1: return position.x >= 220 && position.x <= 280 && position.y <= 105;
-				case 2: return position.x >= (295 - position.y) && position.y >= 150 && position.y <= 180;
-				case 3: return position.x >= 220 && position.x <= 280 && position.y > 190; // && position.y < 200;
+				case 0: return position.x <= 203 - position.y && position.y >= 150 && position.y <= 180;
+				case 1: return position.x >= 220 && position.x <= 280 && position.y <= 103;
+				case 2: return position.x >= (297 - position.y) && position.y >= 150 && position.y <= 180;
+				case 3: return position.x >= 220 && position.x <= 280 && position.y >= 192;
 				default: return false;
 			}
 		}
@@ -523,7 +545,7 @@ namespace SpyVsSpy
 	public class UI
 	{
 		static string baseImageAddress = "../../Assets/Images/";
-		public static Point upperFrameMargin = new Point(20, 20);
+		public static Point upperFrameMargin = new Point(20, 20);	// offset from (0, 0)
 		public static Point lowerFrameMargin = new Point(20, 240);
 
 		// stops the application for the given amount of miliseconds
@@ -569,7 +591,7 @@ namespace SpyVsSpy
 		{
 			pb.Location = new Point(coords.x, coords.y);
 		}
-
+		
 		// makes PictureBox visible or invisible
 		public static void ChangePictureBoxVisibility(PictureBox pb, bool visibility)
 		{
