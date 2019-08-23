@@ -284,10 +284,18 @@ namespace SpyVsSpy
 		// closes the door if open and vice versa
 		public void Switch()
 		{
+			int oppositeDoor = GetCorrespondingDoor(location);
+			Room adjacentRoom = Game.levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
 			if (open)
+			{
 				Close();
+				adjacentRoom.doors[oppositeDoor].Close();
+			}
 			else
+			{
 				Open();
+				adjacentRoom.doors[oppositeDoor].Open();
+			}
 		}
 
 		// makes the door visible
@@ -325,6 +333,19 @@ namespace SpyVsSpy
 				case 2: return position.x >= (297 - position.y) && position.y >= 150 && position.y <= 180;
 				case 3: return position.x >= 220 && position.x <= 280 && position.y >= 192;
 				default: return false;
+			}
+		}
+
+		// returns the number of the door on the opposite side of the wall
+		static int GetCorrespondingDoor(int location)
+		{
+			switch (location)
+			{
+				case 0: return 2;
+				case 1: return 3;
+				case 2: return 0;
+				case 3: return 1;
+				default: return -1;
 			}
 		}
 
