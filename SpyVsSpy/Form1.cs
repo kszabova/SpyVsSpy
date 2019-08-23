@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
+using System.Diagnostics;
 
 namespace SpyVsSpy
 {
@@ -15,8 +17,8 @@ namespace SpyVsSpy
 	{
 		public static Player human;
 		public static Room currentRoom;
+		public static Room[,,] levelMap;
 
-		static Room[] roomList;
 		static PictureBox upperFrame;
 
 		public static void LoadMapFromFile()
@@ -58,7 +60,8 @@ namespace SpyVsSpy
 
 		public static void LoadRoomByDoor(int door)
 		{
-			Room nextRoom = roomList[currentRoom.doors[door].leadsTo];
+			Triplet leadsTo = currentRoom.doors[door].leadsTo;
+			Room nextRoom = levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
 			currentRoom.HideRoom();
 			nextRoom.LoadRoom(upperFrame);
 			currentRoom = nextRoom;
@@ -67,19 +70,11 @@ namespace SpyVsSpy
 		// FOR NOW JUST FOR TESTING
 		public static void Initialize(Form1 parent)
 		{
+			Debug.WriteLine("hello there");
 			upperFrame = UI.CreatePictureBox("placeholderBackground.png", new Coordinates(20, 20), 500, 200, parent);
-			roomList = new Room[3];
-			roomList[0] = new Room('O');
-			roomList[0].AddDoor(0, 2, parent);
-			roomList[0].AddDoor(1, 1, parent);
-			roomList[1] = new Room('B');
-			roomList[1].AddDoor(3, 0, parent);
-			roomList[1].AddDoor(0, 2, parent);
-			roomList[2] = new Room('G');
-			roomList[2].AddDoor(2, 1, parent);
-			roomList[2].AddDoor(3, 0, parent);
+			Triplet firstRoomCoords = UI.LoadLevel(1, parent);
+			currentRoom = levelMap[firstRoomCoords.x, firstRoomCoords.y, firstRoomCoords.z];
 			human = new Player(parent, upperFrame);
-			currentRoom = roomList[0];
 			currentRoom.LoadRoom(upperFrame);
 		}
 	}
@@ -261,14 +256,14 @@ namespace SpyVsSpy
 	public class Door
 	{
 		int location;	// possible values 0-3, in the middle of each wall
-		public int leadsTo;
+		public Triplet leadsTo;
 		public bool open;
 		string openFileName;
 		string closedFileName;
 		PictureBox doorImage;
 		Coordinates imagePosition;
 
-		public Door(int location, int leadsTo, Form1 parent)
+		public Door(int location, Triplet leadsTo, Form1 parent)
 		{
 			this.location = location;
 			this.leadsTo = leadsTo;
@@ -445,6 +440,18 @@ namespace SpyVsSpy
 		}
 	}
 
+	// holds three integer values
+	public class Triplet
+	{
+		public int x, y, z;
+		public Triplet(int x, int y, int z)
+		{
+			this.x = x;
+			this.y = y;
+			this.z = z;
+		}
+	}
+
 	// keeps track of furniture, doors, traps and objects in the room
 	public class Room
 	{
@@ -529,7 +536,7 @@ namespace SpyVsSpy
 		}
 
 		// adds a door to room !!! TO BE CHANGED !!!
-		public void AddDoor(int i, int leadsTo, Form1 parent)
+		public void AddDoor(int i, Triplet leadsTo, Form1 parent)
 		{
 			doors[i] = new Door(i, leadsTo, parent);
 		}
@@ -545,6 +552,7 @@ namespace SpyVsSpy
 	public class UI
 	{
 		static string baseImageAddress = "../../Assets/Images/";
+		static string baseMapAddress = "../../Assets/LevelMaps/";
 		public static Point upperFrameMargin = new Point(20, 20);	// offset from (0, 0)
 		public static Point lowerFrameMargin = new Point(20, 240);
 
@@ -603,6 +611,62 @@ namespace SpyVsSpy
 			{
 				pb.Visible = false;
 			}
+		}
+
+		public static Triplet LoadLevel(int level, Form1 parent)
+		{
+			string filename = baseMapAddress + "level" + level.ToString() + ".txt";
+			Debug.WriteLine(filename);
+			StreamReader sr;
+			try
+			{
+				sr = new StreamReader(filename);	
+			}
+			catch
+			{
+				throw new Exception();
+			}
+			string currentLine = sr.ReadLine();
+			string[] lineSplit = currentLine.Split();
+
+			int floors = Convert.ToInt32(lineSplit[0]);
+			int rows = Convert.ToInt32(lineSplit[1]);
+			int cols = Convert.ToInt32(lineSplit[2]);
+
+			Game.levelMap = new Room[floors, rows, cols];
+
+			// load individual rooms
+			for (int f = 0; f < floors; ++f)
+				for (int r = 0; r < rows; ++r)
+					for (int c = 0; c < cols; ++c)
+					{
+						char color = sr.ReadLine()[0];
+						if (color == 'X')		// if room doesn't exist, skip the rest of the code
+						{
+							continue;
+						}
+						Game.levelMap[f, r, c] = new Room(color);
+						Room currentRoom = Game.levelMap[f, r, c];
+
+						// load furnitures
+						int noFurnitures = Convert.ToInt32(sr.ReadLine());
+						string[] furnitures = sr.ReadLine().Split();
+						for (int i = 0; i < noFurnitures * 2; i += 2)
+						{
+							currentRoom.AddFurniture(Convert.ToInt32(furnitures[i]), parent);
+						}
+
+						int noDoors = Convert.ToInt32(sr.ReadLine());
+						string[] doors = sr.ReadLine().Split();
+						for (int i = 0; i < noDoors * 2; i += 2)
+						{
+							string[] leadsToSplit = doors[i + 1].Split(',');
+							Triplet leadsTo = new Triplet(Convert.ToInt32(leadsToSplit[0]), Convert.ToInt32(leadsToSplit[1]), Convert.ToInt32(leadsToSplit[2]));
+							currentRoom.AddDoor(Convert.ToInt32(doors[i]), leadsTo, parent);
+						}
+					}
+			string[] firstRoomSplit = sr.ReadLine().Split(',');
+			return new Triplet(Convert.ToInt32(firstRoomSplit[0]), Convert.ToInt32(firstRoomSplit[1]), Convert.ToInt32(firstRoomSplit[2]));
 		}
 	}
 
