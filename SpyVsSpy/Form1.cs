@@ -122,7 +122,7 @@ namespace SpyVsSpy
 			}
 
 			// if player is crossing a door, loads the new room
-			if (doorCrossed != -1)
+			if (doorCrossed != -1 && ValidateDoorCrossing(direction, doorCrossed))
 			{
 				// update player's position
 				Coordinates newPosition = CalculatePositionAfterCrossingDoor(doorCrossed, playerPosition.floorCoordinates);
@@ -151,6 +151,13 @@ namespace SpyVsSpy
 					doorCrossed = i;
 				}
 			}
+		}
+
+		// checks whether the door player wants to cross is correct according to key press
+		bool ValidateDoorCrossing(char direction, int door)
+		{
+			return (direction == 'L' && door == 0) || (direction == 'U' && door == 1) ||
+				(direction == 'R' && door == 2) || (direction == 'D' && door == 3);
 		}
 
 		// calculates new position of player after crossing door
@@ -613,6 +620,7 @@ namespace SpyVsSpy
 			}
 		}
 
+		// loads map of the rooms from file
 		public static Triplet LoadLevel(int level, Form1 parent)
 		{
 			string filename = baseMapAddress + "level" + level.ToString() + ".txt";
