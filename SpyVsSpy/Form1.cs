@@ -21,11 +21,6 @@ namespace SpyVsSpy
 
 		static PictureBox upperFrame;
 
-		public static void LoadMapFromFile()
-		{
-
-		}
-
 		// handles events when key is pressed
 		public static void EventOnKeyPress(char key)
 		{
@@ -114,7 +109,7 @@ namespace SpyVsSpy
 			SetDoorBeingCrossed(newCoords, ref doorCrossed);
 
 			// check if player is within the limits of the floor, updates coordinates if so
-			if (Coordinates.CheckIfValidFloorPosition(newCoords, 0, 0))
+			if (Coordinates.CheckIfValidFloorPosition(newCoords))
 			{
 				playerPosition.floorCoordinates = newCoords;
 				UpdatePlayerImageCoordinates();
@@ -218,12 +213,12 @@ namespace SpyVsSpy
 		{
 			switch (type)
 			{
-				case 0: return position.x > (100 - position.y + 100) && position.x < (120 - position.y + 100) && position.y < 150;	// bookcase
-				case 1: return position.x > 130 && position.x < 250 && position.y > 100 && position.y < 120;						// desk
-				case 2: return position.x > 150 && position.x < 200 && position.y > 100 && position.y < 120;						// coat rack
-				case 3: return position.x > 250 && position.x < 320 && position.y > 100 && position.y < 120;						// shelf
-				case 4: return position.x > 285 && position.x < 365 && position.y > 100 && position.y < 120;						// microwave
-				case 5: return position.x < (400 + position.y - 100) && position.x > (380 + position.y - 100) && position.y < 140;	// drawer
+				case 0: return position.x < Coordinates.CalculateFloorLimit(position.y, 30, 'l') && position.y < 150;	// bookcase
+				case 1: return position.x > 130 && position.x < 250 && position.y > 100 && position.y < 120;			// desk
+				case 2: return position.x > 150 && position.x < 200 && position.y > 100 && position.y < 120;			// coat rack
+				case 3: return position.x > 250 && position.x < 320 && position.y > 100 && position.y < 120;			// shelf
+				case 4: return position.x > 285 && position.x < 365 && position.y > 100 && position.y < 120;			// microwave
+				case 5: return position.x > Coordinates.CalculateFloorLimit(position.y, 30, 'r') && position.y < 140;	// drawer
 				default: return false;
 			}
 		}
@@ -315,10 +310,10 @@ namespace SpyVsSpy
 		{
 			switch (location)
 			{
-				case 0: return position.x <= (110 - position.y + 100) && position.y >= 150 && position.y <= 180;	// left wall
-				case 1: return position.x >= 220 && position.x <= 280 && position.y >= 100 && position.y <= 110;    // back wall
-				case 2: return position.x >= (390 - position.y - 100) && position.y >= 150 && position.y <= 180;	// right wall
-				case 3: return position.x >= 210 && position.x <= 290 && position.y >= 190 && position.y <= 200;    // front (invisible) wall
+				case 0: return position.x <= Coordinates.CalculateFloorLimit(position.y, 10, 'l') && position.y >= 150 && position.y <= 180;	// left wall
+				case 1: return position.x >= 220 && position.x <= 280 && position.y >= 100 && position.y <= 110;								// back wall
+				case 2: return position.x >= Coordinates.CalculateFloorLimit(position.y, 10, 'r') && position.y >= 150 && position.y <= 180;	// right wall
+				case 3: return position.x >= 210 && position.x <= 290 && position.y >= 190 && position.y <= 200;								// front (invisible) wall
 				default: return false;
 			}
 		}
@@ -328,9 +323,9 @@ namespace SpyVsSpy
 		{
 			switch (location)
 			{
-				case 0: return position.x <= 203 - position.y && position.y >= 150 && position.y <= 180;
+				case 0: return position.x <= Coordinates.CalculateFloorLimit(position.y, 3, 'l') && position.y >= 150 && position.y <= 180;
 				case 1: return position.x >= 220 && position.x <= 280 && position.y <= 103;
-				case 2: return position.x >= (297 - position.y) && position.y >= 150 && position.y <= 180;
+				case 2: return position.x >= Coordinates.CalculateFloorLimit(position.y, 3, 'r') && position.y >= 150 && position.y <= 180;
 				case 3: return position.x >= 220 && position.x <= 280 && position.y >= 192;
 				default: return false;
 			}
@@ -455,16 +450,24 @@ namespace SpyVsSpy
 		}
 
 		// returns true if given position is on the floor
-		// backgroundX and backgroundY are parameters specifying the position of upper left corner of background
-		public static bool CheckIfValidFloorPosition(Coordinates coords, int backgroundX, int backgroundY)
+		public static bool CheckIfValidFloorPosition(Coordinates coords)
 		{
-			// for horizontal coordinates, the limit is calculated this way:
-			// backgroundX gives the margin from 0, therefore we have to factor it in;
-			// the distance of the line on the left/right side of the floor from the respective edge is the same
-			// as the distance from the top floor line, which gives us 100-(coords.y-100) and 400+(coords.y-100) respectively
-			return (coords.x >= backgroundX + 200 - coords.y && coords.x <= backgroundX + 300 + coords.y) &&
-				// vertically, the player must be between 100 and 200
-				(coords.y >= backgroundY + 100 && coords.y <= backgroundY + 200);				
+			return (coords.x >= CalculateFloorLimit(coords.y, 0, 'l') && coords.x <= CalculateFloorLimit(coords.y, 0, 'r')) &&
+				(coords.y >= 100 && coords.y <= 200);				
+		}
+
+		// calculates the x-coordinate of floor limit at y-coordinate distanceFromTop either on [l]eft or [r]ight side
+		public static int CalculateFloorLimit(int distanceFromTop, int margin, char side)
+		{
+			// the value is calculated as follows: the distance from the center horizontal line to floor line is the same as
+			// its distance from the 100th coordinate on the left or 400th on the right, respectively, and the edge;
+			// then the margin pushes the imaginary line towards the center, therefore we add to left and substract from right
+			switch (side)
+			{
+				case 'l': return 200 - distanceFromTop + margin;
+				case 'r': return 300 + distanceFromTop - margin;
+				default: return 0;
+			}
 		}
 	}
 
