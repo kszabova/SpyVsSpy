@@ -16,6 +16,9 @@ namespace SpyVsSpy
 		public static Player human;
 		public static Room currentRoom;
 
+		static Room[] roomList;
+		static PictureBox upperFrame;
+
 		public static void LoadMapFromFile()
 		{
 
@@ -53,15 +56,31 @@ namespace SpyVsSpy
 			}
 		}
 
+		public static void LoadRoomByDoor(int door)
+		{
+			Room nextRoom = roomList[currentRoom.doors[door].leadsTo];
+			currentRoom.HideRoom();
+			nextRoom.LoadRoom(upperFrame);
+			currentRoom = nextRoom;
+		}
+
 		// FOR NOW JUST FOR TESTING
 		public static void Initialize(Form1 parent)
 		{
-			PictureBox upperFrame = UI.CreatePictureBox("placeholderBackground.png", new Coordinates(20, 20), 500, 200, parent);
-			currentRoom = new Room('Y', upperFrame);
-			currentRoom.AddDoor(1, parent);
-			currentRoom.AddFurniture(0, parent);
+			upperFrame = UI.CreatePictureBox("placeholderBackground.png", new Coordinates(20, 20), 500, 200, parent);
+			roomList = new Room[3];
+			roomList[0] = new Room('O');
+			roomList[0].AddDoor(0, 2, parent);
+			roomList[0].AddDoor(1, 1, parent);
+			roomList[1] = new Room('B');
+			roomList[1].AddDoor(3, 0, parent);
+			roomList[1].AddDoor(0, 2, parent);
+			roomList[2] = new Room('G');
+			roomList[2].AddDoor(2, 1, parent);
+			roomList[2].AddDoor(3, 0, parent);
 			human = new Player(parent, upperFrame);
-			currentRoom.LoadRoom();
+			currentRoom = roomList[0];
+			currentRoom.LoadRoom(upperFrame);
 		}
 	}
 
@@ -86,6 +105,7 @@ namespace SpyVsSpy
 		public void MovePlayer(char direction)
 		{
 			Coordinates newCoords = new Coordinates(playerPosition.floorCoordinates.x, playerPosition.floorCoordinates.y);
+			int doorCrossed = -1;
 			switch (direction)
 			{
 				case 'U': newCoords.y -= 5; break;
@@ -94,19 +114,40 @@ namespace SpyVsSpy
 				case 'R': newCoords.x += 5; break;
 			}
 
+			SetDoorBeingCrossed(newCoords, ref doorCrossed);
+
 			if (Coordinates.CheckIfValidFloorPosition(newCoords, 0, 0))
 			{
 				playerPosition.floorCoordinates = newCoords;
 				UpdatePlayerImageCoordinates();
 				UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);
 			}
+
+			if (doorCrossed != -1)
+			{
+				playerPosition.floorCoordinates = new Coordinates(250, 150);	/// !! TEMPORARY !!
+				UpdatePlayerImageCoordinates();
+				Game.LoadRoomByDoor(doorCrossed);
+			}
 		}
 
 		// updates the coordinates of playerImage when playerPosition changes
-		private void UpdatePlayerImageCoordinates()
+		void UpdatePlayerImageCoordinates()
 		{
 			playerImageCoordinates.x = playerPosition.floorCoordinates.x - 20;
 			playerImageCoordinates.y = playerPosition.floorCoordinates.y - 40;
+		}
+
+		// checks if player is crossing a door; if so, sets the variable doorCrossed to the number of that door
+		void SetDoorBeingCrossed(Coordinates pos, ref int doorCrossed)
+		{
+			for (int i = 0; i < 4; ++i)
+			{
+				if (Game.currentRoom.doors[i] != null && Door.PositionInDoor(i, pos) && Game.currentRoom.doors[i].open)
+				{
+					doorCrossed = i;
+				}
+			}
 		}
 	}
 
@@ -124,6 +165,7 @@ namespace SpyVsSpy
 			CalculateImagePosition();
 			SetFilename();
 			furnitureImage = UI.CreatePictureBox(filename, imagePosition, 60, 110, parent);
+			furnitureImage.Hide();
 			furnitureImage.BringToFront();
 		}
 
@@ -197,19 +239,21 @@ namespace SpyVsSpy
 	public class Door
 	{
 		int location;	// possible values 0-3, in the middle of each wall
-		int leadsTo;
-		bool open;
+		public int leadsTo;
+		public bool open;
 		string openFileName;
 		string closedFileName;
 		PictureBox doorImage;
 		Coordinates imagePosition;
 
-		public Door(int location, Form1 parent)
+		public Door(int location, int leadsTo, Form1 parent)
 		{
 			this.location = location;
+			this.leadsTo = leadsTo;
 			CalculateImagePosition();
 			SetFilename();
 			doorImage = UI.CreatePictureBox(closedFileName, imagePosition, 60, 80, parent);
+			doorImage.Hide();
 			doorImage.BringToFront();
 		}
 
@@ -247,6 +291,18 @@ namespace SpyVsSpy
 			}
 		}
 
+		public static bool PositionInDoor(int location, Coordinates position)
+		{
+			switch (location)
+			{
+				case 0: return position.x < 205 - position.y && position.y > 150 && position.y < 180;
+				case 1: return position.x > 220 && position.x < 280 && position.y > 100 && position.y < 105;
+				case 2: return position.x > (290 - position.y) && position.y > 150 && position.y < 180;
+				case 3: return position.x > 220 && position.x < 280 && position.y > 190; // && position.y < 200;
+				default: return false;
+			}
+		}
+
 		// switches the image to that of open door
 		void Open()
 		{
@@ -260,7 +316,6 @@ namespace SpyVsSpy
 			UI.ChangeImageInPictureBox(doorImage, closedFileName);
 			open = false;
 		}
-
 
 		// calculates where the door will be placed on screen
 		void CalculateImagePosition()
@@ -371,18 +426,16 @@ namespace SpyVsSpy
 	public class Room
 	{
 		char color;
-		PictureBox frame;
 		public Furniture[] furnitures = new Furniture[6];
 		public Door[] doors = new Door[4];
 
-		public Room(char color, PictureBox frame)
+		public Room(char color)
 		{
 			this.color = color;
-			this.frame = frame;
 		}
 
 		// loads background, furniture and doors into image
-		public void LoadRoom()
+		public void LoadRoom(PictureBox frame)
 		{
 			UI.ChangeImageInPictureBox(frame, RoomFilename());
 			foreach (Furniture f in furnitures)
@@ -453,9 +506,9 @@ namespace SpyVsSpy
 		}
 
 		// adds a door to room !!! TO BE CHANGED !!!
-		public void AddDoor(int i, Form1 parent)
+		public void AddDoor(int i, int leadsTo, Form1 parent)
 		{
-			doors[i] = new Door(i, parent);
+			doors[i] = new Door(i, leadsTo, parent);
 		}
 
 		// returns the filename of background image depending on the color of room
