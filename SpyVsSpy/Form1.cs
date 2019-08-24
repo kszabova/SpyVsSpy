@@ -53,6 +53,7 @@ namespace SpyVsSpy
 			}
 		}
 
+		// loads next room given door in current room
 		public static void LoadRoomByDoor(int door)
 		{
 			Triplet leadsTo = currentRoom.doors[door].leadsTo;
@@ -78,9 +79,11 @@ namespace SpyVsSpy
 	public class Player
 	{
 		public Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 141));
-		Coordinates playerImageCoordinates = new Coordinates(0, 0);
-		bool alive = true;
 		public PictureBox playerImage;
+		Coordinates playerImageCoordinates = new Coordinates(0, 0);
+
+		bool alive = true;
+		bool[] items = new bool[5];		// 0-passport, 1-key, 2-money, 3-secret plans, 4-suitcase
 
 		public Player(Form1 parent, PictureBox background)
 		{
@@ -129,6 +132,51 @@ namespace SpyVsSpy
 			}
 		}
 
+		// pick up item in furniture; return what item is now in furniture (-1 for none)
+		public int PickUpItem(int item)
+		{
+			// furniture contained suitcase -> player now has suitcase and everything in it
+			if (item == 4)
+			{
+				items[4] = true;
+				for (int i = 0; i < 4; ++i)
+				{
+					items[i] = Suitcase.contents[i];
+				}
+				return -1;
+			}
+			// player has suitcase -> add the item to it
+			else if (items[4])
+			{
+				Suitcase.AddItem(item);
+				items[item] = true;
+				return -1;
+			}
+			// no suitcase
+			else
+			{
+				int itemInPosession = ItemInPosession();
+				// player has some item -> swap the two
+				if (itemInPosession > -1)
+				{
+					items[item] = true;
+					items[itemInPosession] = false;
+					return itemInPosession;
+				}
+				// player has no item -> simply pick up the one in the furniture
+				else
+				{
+					items[item] = true;
+					return itemInPosession;
+				}
+			}
+		}
+
+		public void HideItem(int item)
+		{
+			items[item] = false;
+		}
+
 		// updates the coordinates of playerImage when playerPosition changes
 		void UpdatePlayerImageCoordinates()
 		{
@@ -168,6 +216,19 @@ namespace SpyVsSpy
 			}
 			return newCoords;
 		}
+
+		// returns number of item that player already has
+		int ItemInPosession()
+		{
+			for (int i = 1; i < 5; ++i)
+			{
+				if (items[i])
+				{
+					return i;
+				}
+			}
+			return -1;
+		}
 	}
 
 	// handles furniture behavior
@@ -177,10 +238,12 @@ namespace SpyVsSpy
 		PictureBox furnitureImage;
 		Coordinates imagePosition;
 		string filename;
+		int item;
 
-		public Furniture(int type, Form1 parent)
+		public Furniture(int type, int item, Form1 parent)
 		{
 			this.type = type;
+			this.item = item;
 			CalculateImagePosition();
 			SetFilename();
 			furnitureImage = UI.CreatePictureBox(filename, imagePosition, 60, 110, parent);
@@ -188,21 +251,25 @@ namespace SpyVsSpy
 			furnitureImage.BringToFront();
 		}
 
+		// puts the furniture higher in the air
 		public void Lift()
 		{
 			UI.ChangePictureBoxLocation(furnitureImage, new Coordinates(imagePosition.x, imagePosition.y - 15));
 		}
 
+		// puts the furniture back in its original position
 		public void Release()
 		{
 			UI.ChangePictureBoxLocation(furnitureImage, imagePosition);
 		}
 
+		// makes furniture visible
 		public void Show()
 		{
 			UI.ChangePictureBoxVisibility(furnitureImage, true);
 		}
 
+		// makes furniture invisible
 		public void Hide()
 		{
 			UI.ChangePictureBoxVisibility(furnitureImage, false);
@@ -397,6 +464,41 @@ namespace SpyVsSpy
 		}
 	}
 
+	public class Item
+	{
+		char type;		// [p]assport, [m]oney, [k]ey, [s]ecret plans
+
+		public void ShowOnTrapulator()
+		{
+
+		}
+
+		public void HideFromTrapulator()
+		{
+
+		}
+	}
+
+	public class Suitcase
+	{
+		public static bool[] contents = new bool[4];
+
+		// initialize suitcase with only one item
+		public Suitcase(int initialItem)
+		{
+			for (int i = 0; i < 4; ++i)
+			{
+				contents[i] = false;
+			}
+			contents[initialItem] = true;
+		}
+
+		public static void AddItem(int item)
+		{
+			contents[item] = true;
+		}
+	}
+
 	public class Trap
 	{
 
@@ -584,6 +686,11 @@ namespace SpyVsSpy
 	{
 		static string baseImageAddress = "../../Assets/Images/";
 		static string baseMapAddress = "../../Assets/LevelMaps/";
+
+		public static PictureBox upperFrame;
+		public static PictureBox lowerFrame;
+		public static PictureBox trapulatorUp;
+		public static PictureBox trapulatorDown;
 		public static Point upperFrameMargin = new Point(20, 20);	// offset from (0, 0)
 		public static Point lowerFrameMargin = new Point(20, 240);
 
@@ -725,10 +832,6 @@ namespace SpyVsSpy
 
 		private void Form1_Load(object sender, EventArgs e)
 		{
-			//PictureBox player = UI.CreatePictureBox("../../Assets/Images/placeholderPlayer.png", new Coordinates(100, 100), 50, 100, this);
-			//PictureBox background = UI.CreatePictureBox("../../Assets/Images/roomO.png", new Coordinates(0, 0), 500, 200, this);
-			//UI.ChangePictureBoxLocation(player, new Coordinates(200, 100);
-			//this.Size = new Size(500, 250);
 			Game.Initialize(this);
 		}
 	}
