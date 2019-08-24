@@ -172,7 +172,7 @@ namespace SpyVsSpy
 			}
 		}
 
-		public void HideItem(int item)
+		public void DropItem(int item)
 		{
 			items[item] = false;
 		}
@@ -479,6 +479,7 @@ namespace SpyVsSpy
 		}
 	}
 
+	// keeps track of what is inside the suitcase
 	public class Suitcase
 	{
 		public static bool[] contents = new bool[4];
@@ -662,13 +663,19 @@ namespace SpyVsSpy
 			return -1;
 		}
 
-		// adds a piece of furniture to room  !!! TO BE CHANGED !!!
+		// adds a piece of furniture to room
 		public void AddFurniture(int type, int item, Form1 parent)
 		{
-			furnitures[i] = new Furniture(type, item, parent);
+			// item values larger than 3 mean it is suitcase with something inside
+			if (item > 3)
+			{
+				Suitcase.AddItem(item % 4);
+			}
+			// the furniture wil seemingly contain suitcase only
+			furnitures[type] = new Furniture(type, 4, parent);
 		}
 
-		// adds a door to room !!! TO BE CHANGED !!!
+		// adds a door to room
 		public void AddDoor(int i, Triplet leadsTo, Form1 parent)
 		{
 			doors[i] = new Door(i, leadsTo, parent);
