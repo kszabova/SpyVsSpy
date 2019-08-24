@@ -235,10 +235,10 @@ namespace SpyVsSpy
 	public class Furniture
 	{
 		public int type;    // from left (0) to right (5): bookcase, table, coat rack, shelf, microwave, drawer
+		public int item;
 		PictureBox furnitureImage;
 		Coordinates imagePosition;
 		string filename;
-		int item;
 
 		public Furniture(int type, int item, Form1 parent)
 		{
@@ -663,9 +663,9 @@ namespace SpyVsSpy
 		}
 
 		// adds a piece of furniture to room  !!! TO BE CHANGED !!!
-		public void AddFurniture(int i, Form1 parent)
+		public void AddFurniture(int type, int item, Form1 parent)
 		{
-			furnitures[i] = new Furniture(i, parent);
+			furnitures[i] = new Furniture(type, item, parent);
 		}
 
 		// adds a door to room !!! TO BE CHANGED !!!
@@ -792,7 +792,9 @@ namespace SpyVsSpy
 						string[] furnitures = sr.ReadLine().Split();
 						for (int i = 0; i < noFurnitures * 2; i += 2)
 						{
-							currentRoom.AddFurniture(Convert.ToInt32(furnitures[i]), parent);
+							int type = Convert.ToInt32(furnitures[i]);
+							int item = Convert.ToInt32(furnitures[i + 1]);
+							currentRoom.AddFurniture(type, item, parent);
 						}
 
 						int noDoors = Convert.ToInt32(sr.ReadLine());
