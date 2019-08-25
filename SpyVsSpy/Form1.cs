@@ -273,6 +273,11 @@ namespace SpyVsSpy
 		public void Lift()
 		{
 			UI.ChangePictureBoxLocation(furnitureImage, new Coordinates(imagePosition.x, imagePosition.y - 15));
+			if (item != -1)
+			{
+				int newItem = Game.human.PickUpItem(item);
+				item = newItem;
+			}
 		}
 
 		// puts the furniture back in its original position
@@ -727,19 +732,24 @@ namespace SpyVsSpy
 		}
 
 		// adds a piece of furniture to room
-		public void AddFurniture(int type, int item, Form1 parent)
+		public void AddFurniture(int type, int item)
 		{
 			// item values larger than 3 mean it is suitcase with something inside
 			if (item > 3)
 			{
 				Suitcase.AddItem(item % 4);
+				// the furniture wil seemingly contain suitcase only
+				furnitures[type] = new Furniture(type, 4);
 			}
-			// the furniture wil seemingly contain suitcase only
-			furnitures[type] = new Furniture(type, 4);
+			// otherwise it contains at most one item
+			else
+			{
+				furnitures[type] = new Furniture(type, item);
+			}
 		}
 
 		// adds a door to room
-		public void AddDoor(int i, Triplet leadsTo, Form1 parent)
+		public void AddDoor(int i, Triplet leadsTo)
 		{
 			doors[i] = new Door(i, leadsTo);
 		}
@@ -824,7 +834,7 @@ namespace SpyVsSpy
 			}
 		}
 
-		// loads map of the rooms from file
+		// loads map of the rooms from file, returns starting room
 		public static Triplet LoadLevel(int level, Form1 parent)
 		{
 			string filename = baseMapAddress + "level" + level.ToString() + ".txt";
@@ -867,7 +877,7 @@ namespace SpyVsSpy
 						{
 							int type = Convert.ToInt32(furnitures[i]);
 							int item = Convert.ToInt32(furnitures[i + 1]);
-							currentRoom.AddFurniture(type, item, parent);
+							currentRoom.AddFurniture(type, item);
 						}
 
 						int noDoors = Convert.ToInt32(sr.ReadLine());
@@ -876,7 +886,7 @@ namespace SpyVsSpy
 						{
 							string[] leadsToSplit = doors[i + 1].Split(',');
 							Triplet leadsTo = new Triplet(Convert.ToInt32(leadsToSplit[0]), Convert.ToInt32(leadsToSplit[1]), Convert.ToInt32(leadsToSplit[2]));
-							currentRoom.AddDoor(Convert.ToInt32(doors[i]), leadsTo, parent);
+							currentRoom.AddDoor(Convert.ToInt32(doors[i]), leadsTo);
 						}
 					}
 			string[] firstRoomSplit = sr.ReadLine().Split(',');
