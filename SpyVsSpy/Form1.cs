@@ -23,40 +23,43 @@ namespace SpyVsSpy
 		// handles events when key is pressed
 		public static void EventOnKeyPress(char key)
 		{
-			switch (key)
+			if (players[0].alive)
 			{
-				// movement
-				case 'W': players[0].MovePlayer('U'); break;
-				case 'S': players[0].MovePlayer('D'); break;
-				case 'A': players[0].MovePlayer('L'); break;
-				case 'D': players[0].MovePlayer('R'); break;
+				switch (key)
+				{
+					// movement
+					case 'W': players[0].MovePlayer('U'); break;
+					case 'S': players[0].MovePlayer('D'); break;
+					case 'A': players[0].MovePlayer('L'); break;
+					case 'D': players[0].MovePlayer('R'); break;
 
-				// examining furniture and opening doors
-				case 'X':
-					int closeFurniture = currentRoom.FurnitureNearby(players[0].playerPosition.floorCoordinates);
-					// player is standing in front of a furniture
-					if (closeFurniture != -1)
-					{
-						currentRoom.furnitures[closeFurniture].Lift(0);
-						UI.Wait(500);
-						currentRoom.furnitures[closeFurniture].Release();
-					}
-					else
-					{
-						int closeDoors = currentRoom.DoorNearby(players[0].playerPosition.floorCoordinates);
-						// player is standing in front of a door
-						if (closeDoors != -1)
+					// examining furniture and opening doors
+					case 'X':
+						int closeFurniture = currentRoom.FurnitureNearby(players[0].playerPosition.floorCoordinates);
+						// player is standing in front of a furniture
+						if (closeFurniture != -1)
 						{
-							currentRoom.doors[closeDoors].Switch();
+							currentRoom.furnitures[closeFurniture].Lift(0);
+							UI.Wait(500);
+							currentRoom.furnitures[closeFurniture].Release();
 						}
-						// no furniture and no door
 						else
 						{
-							int furniture = currentRoom.GetRandomFurniture();
-							players[0].DropItemToFurniture(furniture);
+							int closeDoors = currentRoom.DoorNearby(players[0].playerPosition.floorCoordinates);
+							// player is standing in front of a door
+							if (closeDoors != -1)
+							{
+								currentRoom.doors[closeDoors].Switch();
+							}
+							// no furniture and no door => drop item in a random furniture in the room
+							else
+							{
+								int furniture = currentRoom.GetRandomFurniture();
+								players[0].DropItemToFurniture(furniture);
+							}
 						}
-					}
-					break;
+						break;
+				}
 			}
 		}
 
@@ -90,9 +93,9 @@ namespace SpyVsSpy
 		public Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 141));
 		public PictureBox playerImage;
 		Coordinates playerImageCoordinates = new Coordinates(0, 0);
+		public bool alive = true;
 
 		int type;		// 0 for human, 1 for computer
-		bool alive = true;
 		bool[] items = new bool[5];		// 0-passport, 1-key, 2-money, 3-secret plans, 4-suitcase
 
 		public Player(int type)
@@ -146,8 +149,27 @@ namespace SpyVsSpy
 				UpdatePlayerImageCoordinates();										// v
 				UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);   // make these two lines into a new function (Refresh?)
 				// load new room
-				Game.LoadRoomByDoor(doorCrossed);
+				try
+				{
+					Game.LoadRoomByDoor(doorCrossed);
+				}
+				catch
+				{
+					Game.players[0].Die();
+				}
 			}
+		}
+
+		// please dont
+		public void Die()
+		{
+			alive = false;
+			UI.FadeAway(playerImage);
+			// after a while, player appears at the same place where he died
+			UI.Wait(3000);
+			UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);
+			UI.ChangePictureBoxVisibility(playerImage, true);
+			alive = true;
 		}
 
 		// pick up item in furniture; return what item is now in furniture (-1 for none)
@@ -400,17 +422,24 @@ namespace SpyVsSpy
 		public void Switch()
 		{
 			int oppositeDoor = GetCorrespondingDoor(location);
-			Room adjacentRoom = Game.levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
-			if (open)
-			{
-				Close();
-				adjacentRoom.doors[oppositeDoor].Close();
+			try			// remove
+			{			// remove
+				Room adjacentRoom = Game.levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
+				if (open)
+				{
+					Close();
+					adjacentRoom.doors[oppositeDoor].Close();
+				}
+				else
+				{
+					Open();
+					adjacentRoom.doors[oppositeDoor].Open();
+				}
 			}
-			else
+			catch		// remove
 			{
-				Open();
-				adjacentRoom.doors[oppositeDoor].Open();
-			}
+				Game.players[0].Die();//remove
+			}	//remove
 		}
 
 		// makes the door visible
@@ -517,6 +546,7 @@ namespace SpyVsSpy
 		}
 	}
 
+	// takes care mostly of trapulator images; most item logic is part of Player and Furniture class
 	public class Item
 	{
 		static PictureBox[] itemsUp = new PictureBox[4];
@@ -695,7 +725,7 @@ namespace SpyVsSpy
 		public Furniture[] furnitures = new Furniture[6];
 		public Door[] doors = new Door[4];
 
-		List<int> furnituresPresent = new List<int> { };
+		List<int> furnituresPresent = new List<int> { };		// list of all pieces of furniture by number present in the room
 
 		public Room(char color)
 		{
@@ -877,6 +907,17 @@ namespace SpyVsSpy
 			{
 				pb.Visible = false;
 			}
+		}
+
+		// incrementally puts image higher and higher until it eventually disappears
+		public static void FadeAway(PictureBox pb)
+		{
+			for (int i = 0; i < 5; ++i)
+			{
+				pb.Location = new Point(pb.Location.X, pb.Location.Y - 10);
+				Wait(200);
+			}
+			ChangePictureBoxVisibility(pb, false);
 		}
 
 		// loads map of the rooms from file, returns starting room
