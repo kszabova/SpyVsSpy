@@ -15,7 +15,7 @@ namespace SpyVsSpy
 	// control of the game
 	public class Game
 	{
-		public static Player human;
+		public static Player[] players = new Player[2];
 		public static Room currentRoom;
 		public static Room[,,] levelMap;
 		
@@ -26,26 +26,30 @@ namespace SpyVsSpy
 			switch (key)
 			{
 				// movement
-				case 'W': human.MovePlayer('U'); break;
-				case 'S': human.MovePlayer('D'); break;
-				case 'A': human.MovePlayer('L'); break;
-				case 'D': human.MovePlayer('R'); break;
+				case 'W': players[0].MovePlayer('U'); break;
+				case 'S': players[0].MovePlayer('D'); break;
+				case 'A': players[0].MovePlayer('L'); break;
+				case 'D': players[0].MovePlayer('R'); break;
 
 				// examining furniture and opening doors
 				case 'X':
-					int closeFurniture = currentRoom.FurnitureNearby(human.playerPosition.floorCoordinates);
+					int closeFurniture = currentRoom.FurnitureNearby(players[0].playerPosition.floorCoordinates);
 					if (closeFurniture != -1)
 					{
-						currentRoom.furnitures[closeFurniture].Lift();
+						currentRoom.furnitures[closeFurniture].Lift(0);
 						UI.Wait(500);
 						currentRoom.furnitures[closeFurniture].Release();
 					}
 					else
 					{
-						int closeDoors = currentRoom.DoorNearby(human.playerPosition.floorCoordinates);
+						int closeDoors = currentRoom.DoorNearby(players[0].playerPosition.floorCoordinates);
 						if (closeDoors != -1)
 						{
 							currentRoom.doors[closeDoors].Switch();
+						}
+						else
+						{
+
 						}
 					}
 					break;
@@ -71,7 +75,7 @@ namespace SpyVsSpy
 			Item.InitializeItems();
 			Triplet firstRoomCoords = UI.LoadLevel(1, parent);
 			currentRoom = levelMap[firstRoomCoords.x, firstRoomCoords.y, firstRoomCoords.z];
-			human = new Player(0);
+			players[0] = new Player(0);
 			currentRoom.LoadRoom(UI.upperFrame);
 		}
 	}
@@ -190,9 +194,18 @@ namespace SpyVsSpy
 			}
 		}
 
-		public void DropItem(int item)
+		// puts any item the player is holding inside a furniture
+		public void DropItemToFurniture(int furniture)
 		{
-			items[item] = false;
+			int item = ItemInPosession();
+			Game.currentRoom.furnitures[furniture].item = item;
+			// set all items to false; if player only had one item, it will get dropped; if they had a suitcase, they will lose all items
+			for (int i = 0; i < 4; ++i)
+			{
+				items[i] = false;
+				Item.HideFromTrapulator(i, type);
+			}
+			items[4] = false;
 		}
 
 		// updates the coordinates of playerImage when playerPosition changes
@@ -238,13 +251,20 @@ namespace SpyVsSpy
 		// returns number of item that player already has
 		int ItemInPosession()
 		{
-			for (int i = 1; i < 5; ++i)
+			// first check if player has the suitcase
+			if (items[4])
+			{
+				return 4;
+			}
+			// otherwise check other items
+			for (int i = 1; i < 4; ++i)
 			{
 				if (items[i])
 				{
 					return i;
 				}
 			}
+			// if player doesn' have any item, return -1
 			return -1;
 		}
 	}
@@ -270,13 +290,19 @@ namespace SpyVsSpy
 		}
 
 		// puts the furniture higher in the air
-		public void Lift()
+		public void Lift(int player)
 		{
 			UI.ChangePictureBoxLocation(furnitureImage, new Coordinates(imagePosition.x, imagePosition.y - 15));
+			// if furniture contained an item, pick it up
 			if (item != -1)
 			{
-				int newItem = Game.human.PickUpItem(item);
+				int newItem = Game.players[player].PickUpItem(item);
 				item = newItem;
+			}
+			// otherwise put any object player is carrying inside that furniture
+			else
+			{
+				Game.players[player].DropItemToFurniture(type);
 			}
 		}
 
@@ -513,9 +539,13 @@ namespace SpyVsSpy
 			}
 		}
 
+		// hides image from trapulator
 		public static void HideFromTrapulator(int item, int player)
 		{
-
+			if (player == 0)
+			{
+				UI.ChangeImageInPictureBox(itemsUp[item], placeholderImage);
+			}
 		}
 
 		// returns filename of image of given item
