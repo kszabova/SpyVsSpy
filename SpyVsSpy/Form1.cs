@@ -18,8 +18,7 @@ namespace SpyVsSpy
 		public static Player human;
 		public static Room currentRoom;
 		public static Room[,,] levelMap;
-
-		static PictureBox upperFrame;
+		
 
 		// handles events when key is pressed
 		public static void EventOnKeyPress(char key)
@@ -59,19 +58,21 @@ namespace SpyVsSpy
 			Triplet leadsTo = currentRoom.doors[door].leadsTo;
 			Room nextRoom = levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
 			currentRoom.HideRoom();
-			nextRoom.LoadRoom(upperFrame);
+			nextRoom.LoadRoom(UI.upperFrame);
 			currentRoom = nextRoom;
 		}
 
 		// FOR NOW JUST FOR TESTING
 		public static void Initialize(Form1 parent)
 		{
-			Debug.WriteLine("hello there");
-			upperFrame = UI.CreatePictureBox("placeholderBackground.png", new Coordinates(20, 20), 500, 200, parent);
+			UI.parentForm = parent;
+			UI.upperFrame = UI.CreatePictureBox("placeholderBackground.png", new Coordinates(20, 20), 500, 200);
+			UI.trapulatorUp = UI.CreatePictureBox("trapulatorPlaceholder.png", new Coordinates(540, 20), 200, 200);
+			Item.InitializeItems();
 			Triplet firstRoomCoords = UI.LoadLevel(1, parent);
 			currentRoom = levelMap[firstRoomCoords.x, firstRoomCoords.y, firstRoomCoords.z];
-			human = new Player(parent, upperFrame);
-			currentRoom.LoadRoom(upperFrame);
+			human = new Player(0);
+			currentRoom.LoadRoom(UI.upperFrame);
 		}
 	}
 
@@ -82,16 +83,25 @@ namespace SpyVsSpy
 		public PictureBox playerImage;
 		Coordinates playerImageCoordinates = new Coordinates(0, 0);
 
+		int type;		// 0 for human, 1 for computer
 		bool alive = true;
 		bool[] items = new bool[5];		// 0-passport, 1-key, 2-money, 3-secret plans, 4-suitcase
 
-		public Player(Form1 parent, PictureBox background)
+		public Player(int type)
 		{
 			UpdatePlayerImageCoordinates();
-			playerImage = UI.CreatePictureBox("playerWhite.png", playerImageCoordinates, 40, 40, parent);
+			playerImage = UI.CreatePictureBox("playerWhite.png", playerImageCoordinates, 40, 40);
 			// the following two lines are necessary so that the player has a transparent background
-			background.Controls.Add(playerImage);
-			background.BackColor = Color.Transparent;
+			if (type == 0)
+			{
+				UI.upperFrame.Controls.Add(playerImage);
+				UI.upperFrame.BackColor = Color.Transparent;
+			}
+			else
+			{
+				UI.lowerFrame.Controls.Add(playerImage);
+				UI.lowerFrame.BackColor = Color.Transparent;
+			}
 		}
 
 		// moves player in given direction and updates his position on the screen
@@ -142,6 +152,10 @@ namespace SpyVsSpy
 				for (int i = 0; i < 4; ++i)
 				{
 					items[i] = Suitcase.contents[i];
+					if (items[i])
+					{
+						Item.ShowOnTrapulator(i, type);
+					}
 				}
 				return -1;
 			}
@@ -150,6 +164,7 @@ namespace SpyVsSpy
 			{
 				Suitcase.AddItem(item);
 				items[item] = true;
+				Item.ShowOnTrapulator(item, type);
 				return -1;
 			}
 			// no suitcase
@@ -161,12 +176,15 @@ namespace SpyVsSpy
 				{
 					items[item] = true;
 					items[itemInPosession] = false;
+					Item.ShowOnTrapulator(item, type);
+					Item.HideFromTrapulator(itemInPosession, type);
 					return itemInPosession;
 				}
 				// player has no item -> simply pick up the one in the furniture
 				else
 				{
 					items[item] = true;
+					Item.ShowOnTrapulator(item, type);
 					return itemInPosession;
 				}
 			}
@@ -240,13 +258,13 @@ namespace SpyVsSpy
 		Coordinates imagePosition;
 		string filename;
 
-		public Furniture(int type, int item, Form1 parent)
+		public Furniture(int type, int item)
 		{
 			this.type = type;
 			this.item = item;
 			CalculateImagePosition();
 			SetFilename();
-			furnitureImage = UI.CreatePictureBox(filename, imagePosition, 60, 110, parent);
+			furnitureImage = UI.CreatePictureBox(filename, imagePosition, 60, 110);
 			furnitureImage.Hide();
 			furnitureImage.BringToFront();
 		}
@@ -332,13 +350,13 @@ namespace SpyVsSpy
 		PictureBox doorImage;
 		Coordinates imagePosition;
 
-		public Door(int location, Triplet leadsTo, Form1 parent)
+		public Door(int location, Triplet leadsTo)
 		{
 			this.location = location;
 			this.leadsTo = leadsTo;
 			CalculateImagePosition();
 			SetFilename();
-			doorImage = UI.CreatePictureBox(closedFileName, imagePosition, 60, 80, parent);
+			doorImage = UI.CreatePictureBox(closedFileName, imagePosition, 60, 80);
 			doorImage.Hide();
 			doorImage.BringToFront();
 		}
@@ -466,16 +484,61 @@ namespace SpyVsSpy
 
 	public class Item
 	{
-		char type;		// [p]assport, [m]oney, [k]ey, [s]ecret plans
+		static PictureBox[] itemsUp = new PictureBox[4];
 
-		public void ShowOnTrapulator()
+		static string placeholderImage = "placeholderItem.png";
+
+		// creates space for item images on screen
+		public static void InitializeItems()
+		{
+			for (int i = 0; i < 4; ++i)
+			{
+				itemsUp[i] = UI.CreatePictureBox(placeholderImage, CalculatePositionOnTrapulator(i), 50, 50);
+				UI.trapulatorUp.Controls.Add(itemsUp[i]);
+				UI.trapulatorUp.BackColor = Color.Transparent;
+			}
+		}
+
+		// displays item's image on trapulator
+		public static void ShowOnTrapulator(int item, int player)
+		{
+			if (player == 0)
+			{
+				UI.ChangeImageInPictureBox(itemsUp[item], GetFilename(item));
+			}
+		}
+
+		public static void HideFromTrapulator(int item, int player)
 		{
 
 		}
 
-		public void HideFromTrapulator()
+		// returns filename of image of given item
+		static string GetFilename(int item)
 		{
+			string filename = "";
+			switch (item)
+			{
+				case 0: filename = "passport"; break;
+				case 1: filename = "money"; break;
+				case 2: filename = "key"; break;
+				case 3: filename = "secretplans"; break;
+			}
+			return filename + ".png";
+		}
 
+		// returns coordinates where item image should appear on trapulator
+		static Coordinates CalculatePositionOnTrapulator(int item)
+		{
+			Coordinates coords = new Coordinates(0, 100);
+			switch (item)
+			{
+				case 0:	coords.x = 0; break;
+				case 1: coords.x = 50; break;
+				case 2: coords.x = 100; break;
+				case 3: coords.x = 150; break;
+			}
+			return coords;
 		}
 	}
 
@@ -672,13 +735,13 @@ namespace SpyVsSpy
 				Suitcase.AddItem(item % 4);
 			}
 			// the furniture wil seemingly contain suitcase only
-			furnitures[type] = new Furniture(type, 4, parent);
+			furnitures[type] = new Furniture(type, 4);
 		}
 
 		// adds a door to room
 		public void AddDoor(int i, Triplet leadsTo, Form1 parent)
 		{
-			doors[i] = new Door(i, leadsTo, parent);
+			doors[i] = new Door(i, leadsTo);
 		}
 
 		// returns the filename of background image depending on the color of room
@@ -691,6 +754,8 @@ namespace SpyVsSpy
 	// UI functionality
 	public class UI
 	{
+		public static Form1 parentForm;
+
 		static string baseImageAddress = "../../Assets/Images/";
 		static string baseMapAddress = "../../Assets/LevelMaps/";
 
@@ -698,6 +763,7 @@ namespace SpyVsSpy
 		public static PictureBox lowerFrame;
 		public static PictureBox trapulatorUp;
 		public static PictureBox trapulatorDown;
+
 		public static Point upperFrameMargin = new Point(20, 20);	// offset from (0, 0)
 		public static Point lowerFrameMargin = new Point(20, 240);
 
@@ -722,14 +788,14 @@ namespace SpyVsSpy
 		}
 
 		// creates a new PictureBox in the specified position and returns the PictureBox instance
-		public static PictureBox CreatePictureBox(string filename, Coordinates coords, int width, int height, Form1 parent)
+		public static PictureBox CreatePictureBox(string filename, Coordinates coords, int width, int height)
 		{
 			PictureBox pb = new PictureBox();
 			pb.ImageLocation = baseImageAddress + filename;
 			pb.Size = new Size(width, height);
 			pb.SizeMode = PictureBoxSizeMode.AutoSize;
 			pb.Location = new Point(coords.x, coords.y);
-			parent.Controls.Add(pb);
+			parentForm.Controls.Add(pb);
 			return pb;
 		}
 
@@ -841,6 +907,7 @@ namespace SpyVsSpy
 
 		private void Form1_Load(object sender, EventArgs e)
 		{
+			this.Size = new Size(800, 500);
 			Game.Initialize(this);
 		}
 	}
