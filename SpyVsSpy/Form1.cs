@@ -34,6 +34,7 @@ namespace SpyVsSpy
 				// examining furniture and opening doors
 				case 'X':
 					int closeFurniture = currentRoom.FurnitureNearby(players[0].playerPosition.floorCoordinates);
+					// player is standing in front of a furniture
 					if (closeFurniture != -1)
 					{
 						currentRoom.furnitures[closeFurniture].Lift(0);
@@ -43,13 +44,16 @@ namespace SpyVsSpy
 					else
 					{
 						int closeDoors = currentRoom.DoorNearby(players[0].playerPosition.floorCoordinates);
+						// player is standing in front of a door
 						if (closeDoors != -1)
 						{
 							currentRoom.doors[closeDoors].Switch();
 						}
+						// no furniture and no door
 						else
 						{
-
+							int furniture = currentRoom.GetRandomFurniture();
+							players[0].DropItemToFurniture(furniture);
 						}
 					}
 					break;
@@ -691,6 +695,8 @@ namespace SpyVsSpy
 		public Furniture[] furnitures = new Furniture[6];
 		public Door[] doors = new Door[4];
 
+		List<int> furnituresPresent = new List<int> { };
+
 		public Room(char color)
 		{
 			this.color = color;
@@ -764,6 +770,7 @@ namespace SpyVsSpy
 		// adds a piece of furniture to room
 		public void AddFurniture(int type, int item)
 		{
+			furnituresPresent.Add(type);
 			// item values larger than 3 mean it is suitcase with something inside
 			if (item > 3)
 			{
@@ -782,6 +789,14 @@ namespace SpyVsSpy
 		public void AddDoor(int i, Triplet leadsTo)
 		{
 			doors[i] = new Door(i, leadsTo);
+		}
+
+		// returns the number of a random furniture in the room
+		public int GetRandomFurniture()
+		{
+			Random random = new Random();
+			int index = random.Next(furnituresPresent.Count);
+			return furnituresPresent[index];
 		}
 
 		// returns the filename of background image depending on the color of room
