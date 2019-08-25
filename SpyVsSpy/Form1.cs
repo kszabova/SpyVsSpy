@@ -96,13 +96,17 @@ namespace SpyVsSpy
 		public bool alive = true;
 
 		int type;		// 0 for human, 1 for computer
-		bool[] items = new bool[5];		// 0-passport, 1-key, 2-money, 3-secret plans, 4-suitcase
+		bool[] items = new bool[5];     // 0-passport, 1-key, 2-money, 3-secret plans, 4-suitcase
+		string aliveImage;
+		string deadImage;
 
 		public Player(int type)
 		{
+			aliveImage = "playerWhite.png";
+			deadImage = "playerWhiteDead.png";
 			UpdatePlayerImageCoordinates();
-			playerImage = UI.CreatePictureBox("playerWhite.png", playerImageCoordinates, 40, 40);
-			// the following two lines are necessary so that the player has a transparent background
+			playerImage = UI.CreatePictureBox(aliveImage, playerImageCoordinates, 40, 40);
+
 			if (type == 0)
 			{
 				UI.upperFrame.Controls.Add(playerImage);
@@ -164,9 +168,11 @@ namespace SpyVsSpy
 		public void Die()
 		{
 			alive = false;
+			UI.ChangeImageInPictureBox(playerImage, deadImage);
 			UI.FadeAway(playerImage);
 			// after a while, player appears at the same place where he died
 			UI.Wait(3000);
+			UI.ChangeImageInPictureBox(playerImage, aliveImage);
 			UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);
 			UI.ChangePictureBoxVisibility(playerImage, true);
 			alive = true;
@@ -912,7 +918,7 @@ namespace SpyVsSpy
 		// incrementally puts image higher and higher until it eventually disappears
 		public static void FadeAway(PictureBox pb)
 		{
-			for (int i = 0; i < 5; ++i)
+			for (int i = 0; i < 10; ++i)
 			{
 				pb.Location = new Point(pb.Location.X, pb.Location.Y - 10);
 				Wait(200);
