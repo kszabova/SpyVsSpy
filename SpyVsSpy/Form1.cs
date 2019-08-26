@@ -77,8 +77,8 @@ namespace SpyVsSpy
 		public static void Initialize(Form1 parent)
 		{
 			UI.parentForm = parent;
-			UI.upperFrame = UI.CreatePictureBox("placeholderBackground.png", new Coordinates(20, 20), 500, 200);
-			UI.trapulatorUp = UI.CreatePictureBox("trapulatorPlaceholder.png", new Coordinates(540, 20), 200, 200);
+			UI.roomViewUp = UI.CreateImage("placeholderBackground.png", new Coordinates(20, 20), new Size(500, 200), parent);
+			UI.sidePanelUp = UI.CreateImage("trapulatorPlaceholder.png", new Coordinates(540, 20), new Size(500, 200), parent);
 			Item.InitializeItems();
 			Triplet firstRoomCoords = UI.LoadLevel(1);
 			currentRoom = levelMap[firstRoomCoords.x, firstRoomCoords.y, firstRoomCoords.z];
@@ -301,7 +301,7 @@ namespace SpyVsSpy
 		public int item;
 		Size imageSize;
 		Coordinates imagePosition;
-		TransparentPanel furnitureImage;
+		public TransparentPanel furnitureImage;
 		string filename;
 
 		public Furniture(int type, int item)
@@ -420,7 +420,7 @@ namespace SpyVsSpy
 		string closedFileName;
 		Size imageSize;
 		Coordinates imagePosition;
-		TransparentPanel doorImage;
+		public TransparentPanel doorImage;
 
 		public Door(int location, Triplet leadsTo)
 		{
@@ -586,8 +586,6 @@ namespace SpyVsSpy
 			for (int i = 0; i < 4; ++i)
 			{
 				itemsUp[i] = UI.CreateImage(placeholderImage, CalculatePositionOnTrapulator(i), imageSize, UI.sidePanelUp);
-				UI.trapulatorUp.Controls.Add(itemsUp[i]);
-				UI.trapulatorUp.BackColor = Color.Transparent;
 			}
 		}
 
@@ -752,7 +750,8 @@ namespace SpyVsSpy
 		public Furniture[] furnitures = new Furniture[6];
 		public Door[] doors = new Door[4];
 
-		List<int> furnituresPresent = new List<int> { };		// list of all pieces of furniture by number present in the room
+		public List<int> furnituresPresent = new List<int> { };     // list of all pieces of furniture by number present in the room
+		public List<int> doorsPresent = new List<int> { };
 
 		public Room(char color)
 		{
@@ -845,6 +844,7 @@ namespace SpyVsSpy
 		// adds a door to room
 		public void AddDoor(int i, Triplet leadsTo)
 		{
+			doorsPresent.Add(i);
 			doors[i] = new Door(i, leadsTo);
 		}
 
@@ -870,19 +870,11 @@ namespace SpyVsSpy
 
 		static string baseImageAddress = "../../Assets/Images/";
 		static string baseMapAddress = "../../Assets/LevelMaps/";
-
-		public static PictureBox upperFrame;
-		public static PictureBox lowerFrame;
-		public static PictureBox trapulatorUp;
-		public static PictureBox trapulatorDown;
-
+		
 		public static TransparentPanel roomViewUp;
 		public static TransparentPanel roomViewDown;
 		public static TransparentPanel sidePanelUp;
 		public static TransparentPanel sidePanelDown;
-
-		public static Point upperFrameMargin = new Point(20, 20);	// offset from (0, 0)
-		public static Point lowerFrameMargin = new Point(20, 240);
 
 		public static int secondsLeft = 120;
 		static TextBox timer;
@@ -931,19 +923,7 @@ namespace SpyVsSpy
 				}
 			};
 		}
-
-		// creates a new PictureBox in the specified position and returns the PictureBox instance
-		public static PictureBox CreatePictureBox(string filename, Coordinates coords, int width, int height)
-		{
-			PictureBox pb = new PictureBox();
-			pb.ImageLocation = baseImageAddress + filename;
-			pb.Size = new Size(width, height);
-			pb.SizeMode = PictureBoxSizeMode.AutoSize;
-			pb.Location = new Point(coords.x, coords.y);
-			parentForm.Controls.Add(pb);
-			return pb;
-		}
-
+		
 		// creates a new panel with specified parameters and returns the TransparentPanel instance
 		public static TransparentPanel CreateImage(string filename, Coordinates coords, Size size, Control parent)
 		{
@@ -954,45 +934,20 @@ namespace SpyVsSpy
 			parent.Controls.Add(panel);
 			return panel;
 		}
-
-		// changes the image in given PictureBox
-		public static void ChangeImageInPictureBox(PictureBox pb, string filename)
-		{
-			pb.ImageLocation = baseImageAddress + filename;
-		}
 		
 		// changes the image in given panel
 		public static void ChangeImageInPanel(TransparentPanel panel, string filename)
 		{
 			panel.ChangeImage(baseImageAddress + filename, panel.Size);
 		}
-
-		// changes the location of given PictureBox
-		public static void ChangePictureBoxLocation(PictureBox pb, Coordinates coords)
-		{
-			pb.Location = new Point(coords.x, coords.y);
-		}
 		
 		// changes the location of given panel
 		public static void ChangePanelLocation(TransparentPanel panel, Coordinates coords)
 		{
 			panel.Location = new Point(coords.x, coords.y);
-			//Invalidate();
+			RedrawRoom();
 		}
-
-		// makes PictureBox visible or invisible
-		public static void ChangePictureBoxVisibility(PictureBox pb, bool visibility)
-		{
-			if (visibility)
-			{
-				pb.Visible = true;
-			}
-			else
-			{
-				pb.Visible = false;
-			}
-		}
-
+		
 		// makes panel visible if visibility==true, otherwise makes it invisible
 		public static void ChangePanelVisibility(TransparentPanel panel, bool visibility)
 		{
@@ -1005,24 +960,13 @@ namespace SpyVsSpy
 				panel.Visible = false;
 			}
 		}
-
-		// incrementally puts image higher and higher until it eventually disappears
-		public static void FadeAway(PictureBox pb)
-		{
-			for (int i = 0; i < 10; ++i)
-			{
-				pb.Location = new Point(pb.Location.X, pb.Location.Y - 10);
-				Wait(200);
-			}
-			ChangePictureBoxVisibility(pb, false);
-		}
-
+		
 		// incrementally puts image higher and higher until it eventually disappears
 		public static void FadeAway(TransparentPanel panel)
 		{
 			for (int i = 0; i < 10; ++i)
 			{
-				panel.Location = new Point(panel.Location.X, panel.Location.Y - 10);
+				ChangePanelLocation(panel, new Coordinates(panel.Location.X, panel.Location.Y - 10));
 				Wait(200);
 			}
 			ChangePanelVisibility(panel, false);
@@ -1108,6 +1052,20 @@ namespace SpyVsSpy
 			sidePanelUp.Location = new Point(540, 20);
 			sidePanelUp.Size = new Size(200, 200);
 			parentForm.Controls.Add(sidePanelUp);
+		}
+
+		public static void RedrawRoom()
+		{
+			roomViewUp.Invalidate();
+			foreach (int i in Game.currentRoom.furnituresPresent)
+			{
+				Game.currentRoom.furnitures[i].furnitureImage.Invalidate();
+			}
+			foreach (int i in Game.currentRoom.doorsPresent)
+			{
+				Game.currentRoom.doors[i].doorImage.Invalidate();
+			}
+			Game.players[0].playerImage.Invalidate();
 		}
 	}
 
