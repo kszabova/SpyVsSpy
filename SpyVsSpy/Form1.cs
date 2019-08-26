@@ -69,7 +69,7 @@ namespace SpyVsSpy
 			Triplet leadsTo = currentRoom.doors[door].leadsTo;
 			Room nextRoom = levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
 			currentRoom.HideRoom();
-			nextRoom.LoadRoom(UI.upperFrame);
+			nextRoom.LoadRoom(UI.roomViewUp);
 			currentRoom = nextRoom;
 		}
 
@@ -80,10 +80,10 @@ namespace SpyVsSpy
 			UI.upperFrame = UI.CreatePictureBox("placeholderBackground.png", new Coordinates(20, 20), 500, 200);
 			UI.trapulatorUp = UI.CreatePictureBox("trapulatorPlaceholder.png", new Coordinates(540, 20), 200, 200);
 			Item.InitializeItems();
-			Triplet firstRoomCoords = UI.LoadLevel(1, parent);
+			Triplet firstRoomCoords = UI.LoadLevel(1);
 			currentRoom = levelMap[firstRoomCoords.x, firstRoomCoords.y, firstRoomCoords.z];
 			players[0] = new Player(0);
-			currentRoom.LoadRoom(UI.upperFrame);
+			currentRoom.LoadRoom(UI.roomViewUp);
 			UI.Countdown();
 		}
 	}
@@ -92,7 +92,8 @@ namespace SpyVsSpy
 	public class Player
 	{
 		public Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 141));
-		public PictureBox playerImage;
+		public TransparentPanel playerImage;
+		Size imageSize = new Size(40, 40);
 		Coordinates playerImageCoordinates = new Coordinates(0, 0);
 		public bool alive = true;
 
@@ -107,18 +108,7 @@ namespace SpyVsSpy
 			aliveImage = "playerWhite.png";
 			deadImage = "playerWhiteDead.png";
 			UpdatePlayerImageCoordinates();
-			playerImage = UI.CreatePictureBox(aliveImage, playerImageCoordinates, 40, 40);
-
-			if (type == 0)
-			{
-				UI.upperFrame.Controls.Add(playerImage);
-				UI.upperFrame.BackColor = Color.Transparent;
-			}
-			else
-			{
-				UI.lowerFrame.Controls.Add(playerImage);
-				UI.lowerFrame.BackColor = Color.Transparent;
-			}
+			playerImage = UI.CreateImage(aliveImage, playerImageCoordinates, imageSize, UI.roomViewUp);
 		}
 
 		// moves player in given direction and updates his position on the screen
@@ -143,7 +133,7 @@ namespace SpyVsSpy
 			{
 				playerPosition.floorCoordinates = newCoords;
 				UpdatePlayerImageCoordinates();
-				UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);
+				UI.ChangePanelLocation(playerImage, playerImageCoordinates);
 			}
 
 			// if player is crossing a door, loads the new room
@@ -153,7 +143,7 @@ namespace SpyVsSpy
 				Coordinates newPosition = CalculatePositionAfterCrossingDoor(doorCrossed, playerPosition.floorCoordinates);
 				playerPosition.floorCoordinates = newPosition;
 				UpdatePlayerImageCoordinates();										// v
-				UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);   // make these two lines into a new function (Refresh?)
+				UI.ChangePanelLocation(playerImage, playerImageCoordinates);   // make these two lines into a new function (Refresh?)
 				// load new room
 				try
 				{
@@ -171,13 +161,13 @@ namespace SpyVsSpy
 		{
 			alive = false;
 			UI.secondsLeft -= 15;
-			UI.ChangeImageInPictureBox(playerImage, deadImage);
+			UI.ChangeImageInPanel(playerImage, deadImage);
 			UI.FadeAway(playerImage);
 			// after a while, player appears at the same place where he died
 			UI.Wait(3000);
-			UI.ChangeImageInPictureBox(playerImage, aliveImage);
-			UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);
-			UI.ChangePictureBoxVisibility(playerImage, true);
+			UI.ChangeImageInPanel(playerImage, aliveImage);
+			UI.ChangePanelLocation(playerImage, playerImageCoordinates);
+			UI.ChangePanelVisibility(playerImage, true);
 			alive = true;
 		}
 
@@ -309,17 +299,19 @@ namespace SpyVsSpy
 	{
 		public int type;    // from left (0) to right (5): bookcase, table, coat rack, shelf, microwave, drawer
 		public int item;
-		PictureBox furnitureImage;
+		Size imageSize;
 		Coordinates imagePosition;
+		TransparentPanel furnitureImage;
 		string filename;
 
 		public Furniture(int type, int item)
 		{
 			this.type = type;
 			this.item = item;
+			CalculateImageSize();
 			CalculateImagePosition();
 			SetFilename();
-			furnitureImage = UI.CreatePictureBox(filename, imagePosition, 60, 110);
+			furnitureImage = UI.CreateImage(filename, imagePosition, imageSize, UI.roomViewUp);
 			furnitureImage.Hide();
 			furnitureImage.BringToFront();
 		}
@@ -327,7 +319,7 @@ namespace SpyVsSpy
 		// puts the furniture higher in the air
 		public void Lift(int player)
 		{
-			UI.ChangePictureBoxLocation(furnitureImage, new Coordinates(imagePosition.x, imagePosition.y - 15));
+			UI.ChangePanelLocation(furnitureImage, new Coordinates(imagePosition.x, imagePosition.y - 15));
 			// if furniture contained an item, pick it up
 			if (item != -1)
 			{
@@ -344,19 +336,19 @@ namespace SpyVsSpy
 		// puts the furniture back in its original position
 		public void Release()
 		{
-			UI.ChangePictureBoxLocation(furnitureImage, imagePosition);
+			UI.ChangePanelLocation(furnitureImage, imagePosition);
 		}
 
 		// makes furniture visible
 		public void Show()
 		{
-			UI.ChangePictureBoxVisibility(furnitureImage, true);
+			UI.ChangePanelVisibility(furnitureImage, true);
 		}
 
 		// makes furniture invisible
 		public void Hide()
 		{
-			UI.ChangePictureBoxVisibility(furnitureImage, false);
+			UI.ChangePanelVisibility(furnitureImage, false);
 		}
 
 		// returns whether position is close to a specific type of furniture
@@ -386,8 +378,21 @@ namespace SpyVsSpy
 				case 4: imagePosition = new Coordinates(285, 60); break;	// microwave
 				case 5: imagePosition = new Coordinates(380, 30); break;	// drawer
 			}
-			imagePosition.x += UI.upperFrameMargin.X;
-			imagePosition.y += UI.upperFrameMargin.Y;
+		}
+
+		// calculates size of image depending on type
+		void CalculateImageSize()
+		{
+			switch (type)
+			{
+				case 0: imageSize = new Size(70, 120); break;
+				case 1: imageSize = new Size(120, 60); break;
+				case 2: imageSize = new Size(50, 70); break;
+				case 3: imageSize = new Size(70, 50); break;
+				case 4: imageSize = new Size(80, 50); break;
+				case 5: imageSize = new Size(60, 110); break;
+				default: imageSize = new Size(0, 0); break;
+			}
 		}
 
 		// sets the variable fileName according to furniture type
@@ -413,16 +418,18 @@ namespace SpyVsSpy
 		public bool open;
 		string openFileName;
 		string closedFileName;
-		PictureBox doorImage;
+		Size imageSize;
 		Coordinates imagePosition;
+		TransparentPanel doorImage;
 
 		public Door(int location, Triplet leadsTo)
 		{
 			this.location = location;
 			this.leadsTo = leadsTo;
+			CalculateImageSize();
 			CalculateImagePosition();
 			SetFilename();
-			doorImage = UI.CreatePictureBox(closedFileName, imagePosition, 60, 80);
+			doorImage = UI.CreateImage(closedFileName, imagePosition, imageSize, UI.roomViewUp);
 			doorImage.Hide();
 			doorImage.BringToFront();
 		}
@@ -454,13 +461,13 @@ namespace SpyVsSpy
 		// makes the door visible
 		public void Show()
 		{
-			UI.ChangePictureBoxVisibility(doorImage, true);
+			UI.ChangePanelVisibility(doorImage, true);
 		}
 
 		// makes the door invisible
 		public void Hide()
 		{
-			UI.ChangePictureBoxVisibility(doorImage, false);
+			UI.ChangePanelVisibility(doorImage, false);
 		}
 
 		// returns true if position is in front of a specific door
@@ -505,14 +512,14 @@ namespace SpyVsSpy
 		// switches the image to that of open door
 		void Open()
 		{
-			UI.ChangeImageInPictureBox(doorImage, openFileName);
+			UI.ChangeImageInPanel(doorImage, openFileName);
 			open = true;
 		}
 
 		// switches the image to closed
 		void Close()
 		{
-			UI.ChangeImageInPictureBox(doorImage, closedFileName);
+			UI.ChangeImageInPanel(doorImage, closedFileName);
 			open = false;
 		}
 
@@ -526,8 +533,18 @@ namespace SpyVsSpy
 				case 2: imagePosition = new Coordinates(450, 70); break;
 				case 3: imagePosition = new Coordinates(210, 195); break;
 			}
-			imagePosition.x += UI.upperFrameMargin.X;
-			imagePosition.y += UI.upperFrameMargin.Y;
+		}
+
+		// sets the size of door image depending on location
+		void CalculateImageSize()
+		{
+			switch (location)
+			{
+				case 0: case 2: imageSize = new Size(30, 110); break;
+				case 1: imageSize = new Size(60, 80); break;
+				case 3: imageSize = new Size(80, 5); break;
+				default: imageSize = new Size(0, 0); break;
+			}
 		}
 
 		// sets the filename variable depending on type of door
@@ -558,16 +575,17 @@ namespace SpyVsSpy
 	// takes care mostly of trapulator images; most item logic is part of Player and Furniture class
 	public class Item
 	{
-		static PictureBox[] itemsUp = new PictureBox[4];
+		static TransparentPanel[] itemsUp = new TransparentPanel[4];
 
 		static string placeholderImage = "placeholderItem.png";
+		static Size imageSize = new Size(50, 50);
 
 		// creates space for item images on screen
 		public static void InitializeItems()
 		{
 			for (int i = 0; i < 4; ++i)
 			{
-				itemsUp[i] = UI.CreatePictureBox(placeholderImage, CalculatePositionOnTrapulator(i), 50, 50);
+				itemsUp[i] = UI.CreateImage(placeholderImage, CalculatePositionOnTrapulator(i), imageSize, UI.sidePanelUp);
 				UI.trapulatorUp.Controls.Add(itemsUp[i]);
 				UI.trapulatorUp.BackColor = Color.Transparent;
 			}
@@ -578,7 +596,7 @@ namespace SpyVsSpy
 		{
 			if (player == 0)
 			{
-				UI.ChangeImageInPictureBox(itemsUp[item], GetFilename(item));
+				UI.ChangeImageInPanel(itemsUp[item], GetFilename(item));
 			}
 		}
 
@@ -587,7 +605,7 @@ namespace SpyVsSpy
 		{
 			if (player == 0)
 			{
-				UI.ChangeImageInPictureBox(itemsUp[item], placeholderImage);
+				UI.ChangeImageInPanel(itemsUp[item], placeholderImage);
 			}
 		}
 
@@ -742,9 +760,9 @@ namespace SpyVsSpy
 		}
 
 		// loads background, furniture and doors into image
-		public void LoadRoom(PictureBox frame)
+		public void LoadRoom(TransparentPanel frame)
 		{
-			UI.ChangeImageInPictureBox(frame, RoomFilename());
+			UI.ChangeImageInPanel(frame, RoomFilename());
 			foreach (Furniture f in furnitures)
 			{
 				if (f != null)
@@ -858,6 +876,11 @@ namespace SpyVsSpy
 		public static PictureBox trapulatorUp;
 		public static PictureBox trapulatorDown;
 
+		public static TransparentPanel roomViewUp;
+		public static TransparentPanel roomViewDown;
+		public static TransparentPanel sidePanelUp;
+		public static TransparentPanel sidePanelDown;
+
 		public static Point upperFrameMargin = new Point(20, 20);	// offset from (0, 0)
 		public static Point lowerFrameMargin = new Point(20, 240);
 
@@ -921,18 +944,42 @@ namespace SpyVsSpy
 			return pb;
 		}
 
+		// creates a new panel with specified parameters and returns the TransparentPanel instance
+		public static TransparentPanel CreateImage(string filename, Coordinates coords, Size size, Control parent)
+		{
+			TransparentPanel panel = new TransparentPanel();
+			panel.Size = size;
+			panel.Location = new Point(coords.x, coords.y);
+			panel.ChangeImage(baseImageAddress + filename, size);
+			parent.Controls.Add(panel);
+			return panel;
+		}
+
 		// changes the image in given PictureBox
 		public static void ChangeImageInPictureBox(PictureBox pb, string filename)
 		{
 			pb.ImageLocation = baseImageAddress + filename;
 		}
 		
+		// changes the image in given panel
+		public static void ChangeImageInPanel(TransparentPanel panel, string filename)
+		{
+			panel.ChangeImage(baseImageAddress + filename, panel.Size);
+		}
+
 		// changes the location of given PictureBox
 		public static void ChangePictureBoxLocation(PictureBox pb, Coordinates coords)
 		{
 			pb.Location = new Point(coords.x, coords.y);
 		}
 		
+		// changes the location of given panel
+		public static void ChangePanelLocation(TransparentPanel panel, Coordinates coords)
+		{
+			panel.Location = new Point(coords.x, coords.y);
+			//Invalidate();
+		}
+
 		// makes PictureBox visible or invisible
 		public static void ChangePictureBoxVisibility(PictureBox pb, bool visibility)
 		{
@@ -943,6 +990,19 @@ namespace SpyVsSpy
 			else
 			{
 				pb.Visible = false;
+			}
+		}
+
+		// makes panel visible if visibility==true, otherwise makes it invisible
+		public static void ChangePanelVisibility(TransparentPanel panel, bool visibility)
+		{
+			if (visibility)
+			{
+				panel.Visible = true;
+			}
+			else
+			{
+				panel.Visible = false;
 			}
 		}
 
@@ -957,8 +1017,19 @@ namespace SpyVsSpy
 			ChangePictureBoxVisibility(pb, false);
 		}
 
+		// incrementally puts image higher and higher until it eventually disappears
+		public static void FadeAway(TransparentPanel panel)
+		{
+			for (int i = 0; i < 10; ++i)
+			{
+				panel.Location = new Point(panel.Location.X, panel.Location.Y - 10);
+				Wait(200);
+			}
+			ChangePanelVisibility(panel, false);
+		}
+
 		// loads map of the rooms from file, returns starting room
-		public static Triplet LoadLevel(int level, Form1 parent)
+		public static Triplet LoadLevel(int level)
 		{
 			string filename = baseMapAddress + "level" + level.ToString() + ".txt";
 			Debug.WriteLine(filename);
@@ -1023,10 +1094,62 @@ namespace SpyVsSpy
 			int seconds = secondsLeft % 60;
 			timer.Text = Convert.ToString(minutes) + ":" + Convert.ToString(seconds);
 		}
+
+		// loads main parts of the UI
+		public static void LoadUI(Form1 form)
+		{
+			parentForm = form;
+			roomViewUp = new TransparentPanel();
+			roomViewUp.Location = new Point(20, 20);
+			roomViewUp.Size = new Size(500, 200);
+			parentForm.Controls.Add(roomViewUp);
+
+			sidePanelUp = new TransparentPanel();
+			sidePanelUp.Location = new Point(540, 20);
+			sidePanelUp.Size = new Size(200, 200);
+			parentForm.Controls.Add(sidePanelUp);
+		}
+	}
+
+	// transparent control for graphics
+	public class TransparentPanel : Panel
+	{
+		string imageFilename = "../../Assets/Images/placeholderBackground.png";
+
+		[Browsable(false)]
+		protected override CreateParams CreateParams
+		{
+			get
+			{
+				CreateParams cp = base.CreateParams;
+				cp.ExStyle |= 0x20;
+				return cp;
+			}
+		}
+
+		protected override void OnPaintBackground(PaintEventArgs e)
+		{
+			// do nothing
+		}
+
+		protected override void OnPaint(PaintEventArgs e)
+		{
+			Graphics g = e.Graphics;
+			g.DrawImage(Image.FromFile(imageFilename), 0, 0, Size.Width, Size.Height);
+			base.OnPaint(e);
+		}
+
+		public void ChangeImage(string filename, Size size)
+		{
+			imageFilename = filename;
+			Size = size;
+			Invalidate();
+		}
 	}
 
 	public partial class Form1 : Form
 	{
+		private PictureBox pb1 = new PictureBox();
 		// handles behavior after key press
 		protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
 		{
@@ -1048,7 +1171,8 @@ namespace SpyVsSpy
 
 		private void Form1_Load(object sender, EventArgs e)
 		{
-			this.Size = new Size(800, 500);
+			this.Size = new Size(800, 800);
+			UI.LoadUI(this);
 			Game.Initialize(this);
 		}
 	}
