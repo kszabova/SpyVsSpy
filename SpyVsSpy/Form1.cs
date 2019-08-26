@@ -84,6 +84,7 @@ namespace SpyVsSpy
 			currentRoom = levelMap[firstRoomCoords.x, firstRoomCoords.y, firstRoomCoords.z];
 			players[0] = new Player(0);
 			currentRoom.LoadRoom(UI.upperFrame);
+			UI.Countdown();
 		}
 	}
 
@@ -100,6 +101,7 @@ namespace SpyVsSpy
 		string aliveImage;
 		string deadImage;
 
+		// !! TEMPORARY !! - will depend on type of player, reduce repeating code etc
 		public Player(int type)
 		{
 			aliveImage = "playerWhite.png";
@@ -168,6 +170,7 @@ namespace SpyVsSpy
 		public void Die()
 		{
 			alive = false;
+			UI.secondsLeft -= 15;
 			UI.ChangeImageInPictureBox(playerImage, deadImage);
 			UI.FadeAway(playerImage);
 			// after a while, player appears at the same place where he died
@@ -858,6 +861,9 @@ namespace SpyVsSpy
 		public static Point upperFrameMargin = new Point(20, 20);	// offset from (0, 0)
 		public static Point lowerFrameMargin = new Point(20, 240);
 
+		public static int secondsLeft = 120;
+		static TextBox timer;
+
 		// stops the application for the given amount of miliseconds
 		public static void Wait(int miliseconds)
 		{
@@ -876,6 +882,31 @@ namespace SpyVsSpy
 			{
 				Application.DoEvents();
 			}
+		}
+
+		// keeps track of time player has left
+		public static void Countdown()
+		{
+			timer = new TextBox();
+			timer.Location = new Point(540, 240);
+			timer.ReadOnly = true;
+			parentForm.Controls.Add(timer);
+			Timer countdown = new Timer()
+			{
+				Interval = 1000,
+				Enabled = true
+			};
+			countdown.Start();
+			countdown.Tick += (s, e) =>
+			{
+				secondsLeft--;
+				UpdateTimer();
+				if (secondsLeft == 0)
+				{
+					Game.players[0].Die();
+					countdown.Stop();
+				}
+			};
 		}
 
 		// creates a new PictureBox in the specified position and returns the PictureBox instance
@@ -983,6 +1014,14 @@ namespace SpyVsSpy
 					}
 			string[] firstRoomSplit = sr.ReadLine().Split(',');
 			return new Triplet(Convert.ToInt32(firstRoomSplit[0]), Convert.ToInt32(firstRoomSplit[1]), Convert.ToInt32(firstRoomSplit[2]));
+		}
+
+		// updates text on timer
+		static void UpdateTimer()
+		{
+			int minutes = secondsLeft / 60;
+			int seconds = secondsLeft % 60;
+			timer.Text = Convert.ToString(minutes) + ":" + Convert.ToString(seconds);
 		}
 	}
 
