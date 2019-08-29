@@ -875,9 +875,11 @@ namespace SpyVsSpy
 		public static TransparentPanel roomViewDown;
 		public static TransparentPanel sidePanelUp;
 		public static TransparentPanel sidePanelDown;
+		public static TextPanel countdownUp;
+		public static TextPanel countdownDown;
 
 		public static int secondsLeft = 120;
-		static TextBox timer;
+		//static TextBox timer;
 
 		// stops the application for the given amount of miliseconds
 		public static void Wait(int miliseconds)
@@ -902,10 +904,10 @@ namespace SpyVsSpy
 		// keeps track of time player has left
 		public static void Countdown()
 		{
-			timer = new TextBox();
-			timer.Location = new Point(540, 240);
-			timer.ReadOnly = true;
-			parentForm.Controls.Add(timer);
+			//timer = new TextBox();
+			//timer.Location = new Point(540, 240);
+			//timer.ReadOnly = true;
+			//parentForm.Controls.Add(timer);
 			Timer countdown = new Timer()
 			{
 				Interval = 1000,
@@ -1036,7 +1038,8 @@ namespace SpyVsSpy
 		{
 			int minutes = secondsLeft / 60;
 			int seconds = secondsLeft % 60;
-			timer.Text = Convert.ToString(minutes) + ":" + Convert.ToString(seconds);
+			string timeText = Convert.ToString(minutes) + ":" + Convert.ToString(seconds);
+			countdownUp.UpdateText(timeText);
 		}
 
 		// loads main parts of the UI
@@ -1052,8 +1055,30 @@ namespace SpyVsSpy
 			sidePanelUp.Location = new Point(540, 20);
 			sidePanelUp.Size = new Size(200, 200);
 			parentForm.Controls.Add(sidePanelUp);
+
+			
+			countdownUp = new TextPanel();
+			countdownUp.Location = new Point(0, 0);
+			countdownUp.Size = new Size(200, 100);
+			sidePanelUp.Controls.Add(countdownUp);
+
+			roomViewDown = new TransparentPanel();
+			roomViewDown.Location = new Point(20, 240);
+			roomViewDown.Size = new Size(500, 200);
+			parentForm.Controls.Add(roomViewDown);
+
+			sidePanelDown = new TransparentPanel();
+			sidePanelDown.Location = new Point(540, 240);
+			sidePanelDown.Size = new Size(200, 200);
+			parentForm.Controls.Add(sidePanelDown);
+
+			countdownDown = new TextPanel();
+			countdownDown.Location = new Point(0, 0);
+			countdownDown.Size = new Size(200, 100);
+			sidePanelDown.Controls.Add(countdownDown);
 		}
 
+		// this causes buffer - find a better way?
 		public static void RedrawRoom()
 		{
 			roomViewUp.Invalidate();
@@ -1073,6 +1098,8 @@ namespace SpyVsSpy
 	public class TransparentPanel : Panel
 	{
 		string imageFilename = "../../Assets/Images/placeholderBackground.png";
+		public Font font = new Font("Calibri", 40);
+		public SolidBrush brush = new SolidBrush(Color.AliceBlue);
 
 		[Browsable(false)]
 		protected override CreateParams CreateParams
@@ -1105,9 +1132,29 @@ namespace SpyVsSpy
 		}
 	}
 
+	// panel that can display dynamically updated text
+	public class TextPanel : Panel
+	{
+		public Font font = new Font("Calibri", 40);
+		public SolidBrush brush = new SolidBrush(Color.Aquamarine);
+		public string text = "";
+
+		protected override void OnPaint(PaintEventArgs e)
+		{
+			Graphics g = e.Graphics;
+			g.DrawString(text, font, brush, new Point(20, 20));
+			base.OnPaint(e);
+		}
+
+		public void UpdateText(string text)
+		{
+			Invalidate();
+			this.text = text;
+		}
+	}
+
 	public partial class Form1 : Form
 	{
-		private PictureBox pb1 = new PictureBox();
 		// handles behavior after key press
 		protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
 		{
@@ -1129,7 +1176,7 @@ namespace SpyVsSpy
 
 		private void Form1_Load(object sender, EventArgs e)
 		{
-			this.Size = new Size(800, 800);
+			this.Size = new Size(800, 500);
 			UI.LoadUI(this);
 			Game.Initialize(this);
 		}
