@@ -874,7 +874,7 @@ namespace SpyVsSpy
 	{
 		public static Form1 parentForm;
 
-		static string baseImageAddress = "../../Assets/Images/";
+		public static string baseImageAddress = "../../Assets/Images/";
 		static string baseMapAddress = "../../Assets/LevelMaps/";
 		
 		public static TransparentPanel roomViewUp;
@@ -1122,8 +1122,7 @@ namespace SpyVsSpy
 	public class TransparentPanel : Panel
 	{
 		string imageFilename = "../../Assets/Images/placeholderBackground.png";
-		public Font font = new Font("Calibri", 40);
-		public SolidBrush brush = new SolidBrush(Color.AliceBlue);
+		List<ImageContainer> images = new List<ImageContainer> { };
 
 		[Browsable(false)]
 		protected override CreateParams CreateParams
@@ -1144,7 +1143,10 @@ namespace SpyVsSpy
 		protected override void OnPaint(PaintEventArgs e)
 		{
 			Graphics g = e.Graphics;
-			g.DrawImage(Image.FromFile(imageFilename), 0, 0, Size.Width, Size.Height);
+			foreach (ImageContainer image in images)
+			{
+				g.DrawImage(Image.FromFile(UI.baseImageAddress + image.filename), image.location.X, image.location.Y, image.size.Width, image.size.Height);
+			}
 			base.OnPaint(e);
 		}
 
@@ -1174,6 +1176,20 @@ namespace SpyVsSpy
 		{
 			Invalidate();
 			this.text = text;
+		}
+	}
+
+	public class ImageContainer
+	{
+		public string filename;
+		public Point location;
+		public Size size;
+
+		public ImageContainer(string filename, Point location, Size size)
+		{
+			this.filename = filename;
+			this.location = location;
+			this.size = size;
 		}
 	}
 
