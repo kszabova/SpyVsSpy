@@ -299,8 +299,8 @@ namespace SpyVsSpy
 	{
 		public int type;    // from left (0) to right (5): bookcase, table, coat rack, shelf, microwave, drawer
 		public int item;
-		Size imageSize;
-		Coordinates imagePosition;
+		public Size imageSize;
+		public Coordinates imagePosition;
 		public TransparentPanel furnitureImage;
 		string filename;
 
@@ -418,8 +418,8 @@ namespace SpyVsSpy
 		public bool open;
 		string openFileName;
 		string closedFileName;
-		Size imageSize;
-		Coordinates imagePosition;
+		public Size imageSize;
+		public Coordinates imagePosition;
 		public TransparentPanel doorImage;
 
 		public Door(int location, Triplet leadsTo)
@@ -729,6 +729,12 @@ namespace SpyVsSpy
 				default: return 0;
 			}
 		}
+
+		// converts Coordinates to Point
+		public Point ToPoint()
+		{
+			return new Point(x, y);
+		}
 	}
 
 	// holds three integer values
@@ -947,7 +953,7 @@ namespace SpyVsSpy
 		public static void ChangePanelLocation(TransparentPanel panel, Coordinates coords)
 		{
 			panel.Location = new Point(coords.x, coords.y);
-			RedrawRoom();
+			RedrawRoom('u');
 		}
 		
 		// makes panel visible if visibility==true, otherwise makes it invisible
@@ -1079,19 +1085,37 @@ namespace SpyVsSpy
 		}
 
 		// this causes buffer - find a better way?
-		public static void RedrawRoom()
+		public static void RedrawRoom(char frame)
 		{
-			roomViewUp.Invalidate();
+			//roomViewUp.Invalidate();
+			TransparentPanel roomView;
+			if (frame == 'u')
+				roomView = roomViewUp;
+			else
+				roomView = roomViewDown;
+
+			int nearbyFurniture = Game.currentRoom.FurnitureNearby(Game.players[0].playerPosition.floorCoordinates);
 			foreach (int i in Game.currentRoom.furnituresPresent)
 			{
-				Game.currentRoom.furnitures[i].furnitureImage.Invalidate();
+				if (i == nearbyFurniture)
+				{
+					roomView.Invalidate(new Rectangle(Game.currentRoom.furnitures[i].imagePosition.ToPoint(), Game.currentRoom.furnitures[i].imageSize));
+					Game.currentRoom.furnitures[i].furnitureImage.Invalidate();
+				}
 			}
+			int nearbyDoor = Game.currentRoom.DoorNearby(Game.players[0].playerPosition.floorCoordinates);
 			foreach (int i in Game.currentRoom.doorsPresent)
 			{
-				Game.currentRoom.doors[i].doorImage.Invalidate();
+				if (i == nearbyDoor)
+				{
+					roomView.Invalidate(new Rectangle(Game.currentRoom.doors[i].imagePosition.ToPoint(), Game.currentRoom.doors[i].imageSize));
+					Game.currentRoom.doors[i].doorImage.Invalidate();
+				}
 			}
+			roomView.Invalidate(new Rectangle(Game.players[0].playerImage.Location, Game.players[0].playerImage.Size));
 			Game.players[0].playerImage.Invalidate();
 		}
+		
 	}
 
 	// transparent control for graphics
