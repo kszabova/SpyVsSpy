@@ -107,7 +107,6 @@ namespace SpyVsSpy
 		{
 			aliveImage = "playerWhite.png";
 			deadImage = "playerWhiteDead.png";
-			//playerImage = UI.CreateImage(aliveImage, playerImageCoordinates, imageSize, UI.roomViewUp);
 			image = new ImageContainer(aliveImage, playerImageCoordinates.ToPoint(), imageSize);
 			UpdatePlayerImageCoordinates();
 		}
@@ -305,7 +304,6 @@ namespace SpyVsSpy
 		public int item;
 		public Size imageSize;
 		public Coordinates imagePosition;
-		public TransparentPanel furnitureImage;
 		public ImageContainer image;
 		string filename;
 
@@ -316,16 +314,12 @@ namespace SpyVsSpy
 			CalculateImageSize();
 			CalculateImagePosition();
 			SetFilename();
-			//furnitureImage = UI.CreateImage(filename, imagePosition, imageSize, UI.roomViewUp);
-			//furnitureImage.Hide();
-			//furnitureImage.BringToFront();
 			image = new ImageContainer(filename, imagePosition.ToPoint(), imageSize);
 		}
 
 		// puts the furniture higher in the air
 		public void Lift(int player)
 		{
-			//UI.ChangePanelLocation(furnitureImage, new Coordinates(imagePosition.x, imagePosition.y - 15));
 			image.location = new Point(imagePosition.x, imagePosition.y - 15);
 			UI.UpdateObject(UI.roomViewUp, image, 15);
 			// if furniture contained an item, pick it up
@@ -344,23 +338,10 @@ namespace SpyVsSpy
 		// puts the furniture back in its original position
 		public void Release()
 		{
-			//UI.ChangePanelLocation(furnitureImage, imagePosition);
 			image.location = imagePosition.ToPoint();
 			UI.UpdateObject(UI.roomViewUp, image, 15);
 		}
-
-		// makes furniture visible
-		public void Show()
-		{
-			UI.ChangePanelVisibility(furnitureImage, true);
-		}
-
-		// makes furniture invisible
-		public void Hide()
-		{
-			UI.ChangePanelVisibility(furnitureImage, false);
-		}
-
+		
 		// returns whether position is close to a specific type of furniture
 		public static bool PositionInRangeOfFurniture(int type, Coordinates position)
 		{
@@ -430,7 +411,6 @@ namespace SpyVsSpy
 		string closedFileName;
 		public Size imageSize;
 		public Coordinates imagePosition;
-		public TransparentPanel doorImage;
 		public ImageContainer image;
 
 		public Door(int location, Triplet leadsTo)
@@ -440,9 +420,6 @@ namespace SpyVsSpy
 			CalculateImageSize();
 			CalculateImagePosition();
 			SetFilename();
-			//doorImage = UI.CreateImage(closedFileName, imagePosition, imageSize, UI.roomViewUp);
-			//doorImage.Hide();
-			//doorImage.BringToFront();
 			image = new ImageContainer(closedFileName, imagePosition.ToPoint(), imageSize);
 		}
 
@@ -468,18 +445,6 @@ namespace SpyVsSpy
 			{
 				Game.players[0].Die();//remove
 			}	//remove
-		}
-
-		// makes the door visible
-		public void Show()
-		{
-			UI.ChangePanelVisibility(doorImage, true);
-		}
-
-		// makes the door invisible
-		public void Hide()
-		{
-			UI.ChangePanelVisibility(doorImage, false);
 		}
 
 		// returns true if position is in front of a specific door
@@ -524,7 +489,6 @@ namespace SpyVsSpy
 		// switches the image to that of open door
 		void Open()
 		{
-			//UI.ChangeImageInPanel(doorImage, openFileName);
 			image.filename = openFileName;
 			UI.UpdateObject(UI.roomViewUp, image, 0);
 			open = true;
@@ -533,7 +497,6 @@ namespace SpyVsSpy
 		// switches the image to closed
 		void Close()
 		{
-			//UI.ChangeImageInPanel(doorImage, closedFileName);
 			image.filename = closedFileName;
 			UI.UpdateObject(UI.roomViewUp, image, 0);
 			open = false;
@@ -602,7 +565,6 @@ namespace SpyVsSpy
 			for (int i = 0; i < 4; ++i)
 			{
 				UI.sidePanelUp.images.Add(new ImageContainer(placeholderImage, CalculatePositionOnTrapulator(i).ToPoint(), imageSize));
-				//itemsUp[i] = UI.CreateImage(placeholderImage, CalculatePositionOnTrapulator(i), imageSize, UI.sidePanelUp);
 			}
 		}
 
@@ -611,7 +573,6 @@ namespace SpyVsSpy
 		{
 			if (player == 0)
 			{
-				//UI.ChangeImageInPanel(itemsUp[item], GetFilename(item));
 				UI.sidePanelUp.images[item].filename = GetFilename(item);
 				UI.UpdateObject(UI.sidePanelUp, UI.sidePanelUp.images[item], 0);
 			}
@@ -622,7 +583,6 @@ namespace SpyVsSpy
 		{
 			if (player == 0)
 			{
-				//UI.ChangeImageInPanel(itemsUp[item], placeholderImage);
 				UI.sidePanelUp.images[item].filename = placeholderImage;
 				UI.UpdateObject(UI.sidePanelUp, UI.sidePanelUp.images[item], 0);
 			}
@@ -791,29 +751,9 @@ namespace SpyVsSpy
 		// loads background, furniture and doors into image
 		public void LoadRoom(TransparentPanel frame)
 		{
-			//UI.ChangeImageInPanel(frame, RoomFilename());
 			frame.images = images;
 			images.Add(Game.players[0].image);
 			frame.Invalidate();
-		}
-
-		// hides all furniture and doors
-		public void HideRoom()
-		{
-			foreach (Furniture f in furnitures)
-			{
-				if (f != null)
-				{
-					f.Hide();
-				}
-			}
-			foreach (Door d in doors)
-			{
-				if (d != null)
-				{
-					d.Hide();
-				}
-			}
 		}
 
 		// returns the number of furniture next to which the player is standing, -1 if none
@@ -900,9 +840,6 @@ namespace SpyVsSpy
 		public static TextPanel countdownDown;
 
 		public static int secondsLeft = 120;
-		//static TextBox timer;
-
-		Size invisibleSize = new Size(0, 0);
 
 		// stops the application for the given amount of miliseconds
 		public static void Wait(int miliseconds)
@@ -927,10 +864,6 @@ namespace SpyVsSpy
 		// keeps track of time player has left
 		public static void Countdown()
 		{
-			//timer = new TextBox();
-			//timer.Location = new Point(540, 240);
-			//timer.ReadOnly = true;
-			//parentForm.Controls.Add(timer);
 			Timer countdown = new Timer()
 			{
 				Interval = 1000,
@@ -966,6 +899,7 @@ namespace SpyVsSpy
 			panel.ChangeImage(baseImageAddress + filename, panel.Size);
 		}
 
+		// changes the image displayed in a panel
 		public static void ChangeImage(ImageContainer image, string filename)
 		{
 			image.filename = filename;
@@ -1145,37 +1079,12 @@ namespace SpyVsSpy
 		// this causes buffer - find a better way?
 		public static void RedrawRoom(char frame)
 		{
-			//roomViewUp.Invalidate();
 			TransparentPanel roomView;
 			if (frame == 'u')
 				roomView = roomViewUp;
 			else
 				roomView = roomViewDown;
-
-			/**
-			int nearbyFurniture = Game.currentRoom.FurnitureNearby(Game.players[0].playerPosition.floorCoordinates);
-			foreach (int i in Game.currentRoom.furnituresPresent)
-			{
-				if (i == nearbyFurniture)
-				{
-					//roomView.Invalidate(new Rectangle(Game.currentRoom.furnitures[i].imagePosition.ToPoint(), Game.currentRoom.furnitures[i].imageSize));
-					//Game.currentRoom.furnitures[i].furnitureImage.Invalidate();
-					roomView.Invalidate(GetRectangleWithMargin(Game.currentRoom.furnitures[i].imagePosition.ToPoint(), Game.currentRoom.furnitures[i].imageSize, 10));
-				}
-			}
-			int nearbyDoor = Game.currentRoom.DoorNearby(Game.players[0].playerPosition.floorCoordinates);
-			foreach (int i in Game.currentRoom.doorsPresent)
-			{
-				if (i == nearbyDoor)
-				{
-					//roomView.Invalidate(new Rectangle(Game.currentRoom.doors[i].imagePosition.ToPoint(), Game.currentRoom.doors[i].imageSize));
-					//Game.currentRoom.doors[i].doorImage.Invalidate();
-					roomView.Invalidate(GetRectangleWithMargin(Game.currentRoom.doors[i].imagePosition.ToPoint(), Game.currentRoom.doors[i].imageSize, 0));
-				}
-			}
-			//roomView.Invalidate(new Rectangle(Game.players[0].playerImage.Location, Game.players[0].playerImage.Size));
-			//Game.players[0].playerImage.Invalidate();
-			**/
+			
 			roomView.Invalidate(GetRectangleWithMargin(Game.players[0].playerImage.Location, Game.players[0].playerImage.Size, 5));
 			Game.players[0].playerImage.Invalidate();
 		}
@@ -1251,6 +1160,7 @@ namespace SpyVsSpy
 		}
 	}
 
+	// keeps track of file, location and size of image to be drawn
 	public class ImageContainer
 	{
 		public string filename;
