@@ -18,7 +18,6 @@ namespace SpyVsSpy
 		public static Player[] players = new Player[2];
 		public static Room currentRoom;
 		public static Room[,,] levelMap;
-		
 
 		// handles events when key is pressed
 		public static void EventOnKeyPress(char key)
@@ -68,7 +67,6 @@ namespace SpyVsSpy
 		{
 			Triplet leadsTo = currentRoom.doors[door].leadsTo;
 			Room nextRoom = levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
-			//currentRoom.HideRoom();
 			currentRoom.images.Remove(players[0].image);
 			nextRoom.LoadRoom(UI.roomViewUp);
 			currentRoom = nextRoom;
@@ -603,7 +601,8 @@ namespace SpyVsSpy
 		{
 			for (int i = 0; i < 4; ++i)
 			{
-				itemsUp[i] = UI.CreateImage(placeholderImage, CalculatePositionOnTrapulator(i), imageSize, UI.sidePanelUp);
+				UI.sidePanelUp.images.Add(new ImageContainer(placeholderImage, CalculatePositionOnTrapulator(i).ToPoint(), imageSize));
+				//itemsUp[i] = UI.CreateImage(placeholderImage, CalculatePositionOnTrapulator(i), imageSize, UI.sidePanelUp);
 			}
 		}
 
@@ -612,7 +611,9 @@ namespace SpyVsSpy
 		{
 			if (player == 0)
 			{
-				UI.ChangeImageInPanel(itemsUp[item], GetFilename(item));
+				//UI.ChangeImageInPanel(itemsUp[item], GetFilename(item));
+				UI.sidePanelUp.images[item].filename = GetFilename(item);
+				UI.UpdateObject(UI.sidePanelUp, UI.sidePanelUp.images[item], 0);
 			}
 		}
 
@@ -621,7 +622,9 @@ namespace SpyVsSpy
 		{
 			if (player == 0)
 			{
-				UI.ChangeImageInPanel(itemsUp[item], placeholderImage);
+				//UI.ChangeImageInPanel(itemsUp[item], placeholderImage);
+				UI.sidePanelUp.images[item].filename = placeholderImage;
+				UI.UpdateObject(UI.sidePanelUp, UI.sidePanelUp.images[item], 0);
 			}
 		}
 
