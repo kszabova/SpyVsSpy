@@ -94,7 +94,7 @@ namespace SpyVsSpy
 	{
 		public Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 141));
 		public TransparentPanel playerImage;
-		Size imageSize = new Size(40, 40);
+		public Size imageSize = new Size(40, 40);
 		Coordinates playerImageCoordinates = new Coordinates(0, 0);
 		public ImageContainer image;
 		public bool alive = true;
@@ -164,13 +164,15 @@ namespace SpyVsSpy
 		{
 			alive = false;
 			UI.secondsLeft -= 15;
-			UI.ChangeImageInPanel(playerImage, deadImage);
+			image.filename = deadImage;
+			UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
 			UI.FadeAway(playerImage);
 			// after a while, player appears at the same place where he died
 			UI.Wait(3000);
-			UI.ChangeImageInPanel(playerImage, aliveImage);
+			image.filename = aliveImage;
+			UpdatePlayerImageCoordinates();
 			UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
-			UI.ChangePanelVisibility(playerImage, true);
+			UI.ChangePlayerVisibility(image, true);
 			alive = true;
 		}
 
@@ -894,6 +896,8 @@ namespace SpyVsSpy
 		public static int secondsLeft = 120;
 		//static TextBox timer;
 
+		Size invisibleSize = new Size(0, 0);
+
 		// stops the application for the given amount of miliseconds
 		public static void Wait(int miliseconds)
 		{
@@ -962,6 +966,25 @@ namespace SpyVsSpy
 			panel.Location = new Point(coords.x, coords.y);
 			RedrawRoom('u');
 		}
+
+		// updates image location
+		public static void ChangeImageLocation(ImageContainer image, Point newPosition)
+		{
+			image.location = newPosition;
+		}
+
+		public static void ChangePlayerVisibility(ImageContainer image, bool visibility)
+		{
+			if (visibility)
+			{
+				image.size = Game.players[0].imageSize;
+			}
+			else
+			{
+				image.size = new Size(0, 0);
+			}
+			UpdatePlayerOnScreen(roomViewUp, 0);
+		}
 		
 		// redraws the area with furniture
 		public static void UpdateFurnitureOnScreen(TransparentPanel panel, Furniture furniture)
@@ -996,10 +1019,11 @@ namespace SpyVsSpy
 		{
 			for (int i = 0; i < 10; ++i)
 			{
-				ChangePanelLocation(panel, new Coordinates(panel.Location.X, panel.Location.Y - 10));
+				ChangeImageLocation(Game.players[0].image, new Point(Game.players[0].image.location.X, Game.players[0].image.location.Y - 10));
+				UpdatePlayerOnScreen(roomViewUp, 0);
 				Wait(200);
 			}
-			ChangePanelVisibility(panel, false);
+			ChangePlayerVisibility(Game.players[0].image, false);
 		}
 
 		// loads map of the rooms from file, returns starting room
