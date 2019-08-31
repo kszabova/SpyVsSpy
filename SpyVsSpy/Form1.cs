@@ -113,6 +113,7 @@ namespace SpyVsSpy
 			playerImage.Location = playerImageCoordinates.ToPoint();
 			playerImage.Size = imageSize;
 			playerImage.images.Add(new ImageContainer(aliveImage, new Point(0, 0), playerImage.Size));
+			UI.roomViewUp.Controls.Add(playerImage);
 		}
 
 		// moves player in given direction and updates his position on the screen
@@ -325,7 +326,8 @@ namespace SpyVsSpy
 		// puts the furniture higher in the air
 		public void Lift(int player)
 		{
-			UI.ChangePanelLocation(furnitureImage, new Coordinates(imagePosition.x, imagePosition.y - 15));
+			//UI.ChangePanelLocation(furnitureImage, new Coordinates(imagePosition.x, imagePosition.y - 15));
+			image.location = new Point(imagePosition.x, imagePosition.y - 15);
 			// if furniture contained an item, pick it up
 			if (item != -1)
 			{
@@ -342,7 +344,8 @@ namespace SpyVsSpy
 		// puts the furniture back in its original position
 		public void Release()
 		{
-			UI.ChangePanelLocation(furnitureImage, imagePosition);
+			//UI.ChangePanelLocation(furnitureImage, imagePosition);
+			image.location = imagePosition.ToPoint();
 		}
 
 		// makes furniture visible
@@ -439,7 +442,7 @@ namespace SpyVsSpy
 			//doorImage = UI.CreateImage(closedFileName, imagePosition, imageSize, UI.roomViewUp);
 			//doorImage.Hide();
 			//doorImage.BringToFront();
-			image = new ImageContainer(openFileName, imagePosition.ToPoint(), imageSize);
+			image = new ImageContainer(closedFileName, imagePosition.ToPoint(), imageSize);
 		}
 
 		// closes the door if open and vice versa
@@ -520,14 +523,16 @@ namespace SpyVsSpy
 		// switches the image to that of open door
 		void Open()
 		{
-			UI.ChangeImageInPanel(doorImage, openFileName);
+			//UI.ChangeImageInPanel(doorImage, openFileName);
+			image.filename = closedFileName;
 			open = true;
 		}
 
 		// switches the image to closed
 		void Close()
 		{
-			UI.ChangeImageInPanel(doorImage, closedFileName);
+			//UI.ChangeImageInPanel(doorImage, closedFileName);
+			image.filename = openFileName;
 			open = false;
 		}
 
@@ -1115,8 +1120,9 @@ namespace SpyVsSpy
 			{
 				if (i == nearbyFurniture)
 				{
-					roomView.Invalidate(new Rectangle(Game.currentRoom.furnitures[i].imagePosition.ToPoint(), Game.currentRoom.furnitures[i].imageSize));
+					//roomView.Invalidate(new Rectangle(Game.currentRoom.furnitures[i].imagePosition.ToPoint(), Game.currentRoom.furnitures[i].imageSize));
 					//Game.currentRoom.furnitures[i].furnitureImage.Invalidate();
+					roomView.Invalidate(GetRectangleWithMargin(Game.currentRoom.furnitures[i].imagePosition.ToPoint(), Game.currentRoom.furnitures[i].imageSize, 10));
 				}
 			}
 			int nearbyDoor = Game.currentRoom.DoorNearby(Game.players[0].playerPosition.floorCoordinates);
@@ -1124,12 +1130,22 @@ namespace SpyVsSpy
 			{
 				if (i == nearbyDoor)
 				{
-					roomView.Invalidate(new Rectangle(Game.currentRoom.doors[i].imagePosition.ToPoint(), Game.currentRoom.doors[i].imageSize));
+					//roomView.Invalidate(new Rectangle(Game.currentRoom.doors[i].imagePosition.ToPoint(), Game.currentRoom.doors[i].imageSize));
 					//Game.currentRoom.doors[i].doorImage.Invalidate();
+					roomView.Invalidate(GetRectangleWithMargin(Game.currentRoom.doors[i].imagePosition.ToPoint(), Game.currentRoom.doors[i].imageSize, 0));
 				}
 			}
-			roomView.Invalidate(new Rectangle(Game.players[0].playerImage.Location, Game.players[0].playerImage.Size));
+			//roomView.Invalidate(new Rectangle(Game.players[0].playerImage.Location, Game.players[0].playerImage.Size));
+			//Game.players[0].playerImage.Invalidate();
+			roomView.Invalidate(GetRectangleWithMargin(Game.players[0].playerImage.Location, Game.players[0].playerImage.Size, 5));
 			Game.players[0].playerImage.Invalidate();
+		}
+
+		static Rectangle GetRectangleWithMargin(Point startingPoint, Size startingSize, int margin)
+		{
+			Point newPoint = new Point(startingPoint.X - margin, startingPoint.Y - margin);
+			Size newSize = new Size(startingSize.Width + 2 * margin, startingSize.Height + 2 * margin);
+			return new Rectangle(newPoint, newSize);
 		}
 		
 	}
