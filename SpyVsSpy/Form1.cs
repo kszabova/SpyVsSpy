@@ -68,7 +68,8 @@ namespace SpyVsSpy
 		{
 			Triplet leadsTo = currentRoom.doors[door].leadsTo;
 			Room nextRoom = levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
-			currentRoom.HideRoom();
+			//currentRoom.HideRoom();
+			currentRoom.images.Remove(players[0].image);
 			nextRoom.LoadRoom(UI.roomViewUp);
 			currentRoom = nextRoom;
 		}
@@ -95,6 +96,7 @@ namespace SpyVsSpy
 		public TransparentPanel playerImage;
 		Size imageSize = new Size(40, 40);
 		Coordinates playerImageCoordinates = new Coordinates(0, 0);
+		public ImageContainer image;
 		public bool alive = true;
 
 		int type;		// 0 for human, 1 for computer
@@ -107,13 +109,9 @@ namespace SpyVsSpy
 		{
 			aliveImage = "playerWhite.png";
 			deadImage = "playerWhiteDead.png";
-			UpdatePlayerImageCoordinates();
 			//playerImage = UI.CreateImage(aliveImage, playerImageCoordinates, imageSize, UI.roomViewUp);
-			playerImage = new TransparentPanel();
-			playerImage.Location = playerImageCoordinates.ToPoint();
-			playerImage.Size = imageSize;
-			playerImage.images.Add(new ImageContainer(aliveImage, new Point(0, 0), playerImage.Size));
-			UI.roomViewUp.Controls.Add(playerImage);
+			image = new ImageContainer(aliveImage, playerImageCoordinates.ToPoint(), imageSize);
+			UpdatePlayerImageCoordinates();
 		}
 
 		// moves player in given direction and updates his position on the screen
@@ -138,7 +136,7 @@ namespace SpyVsSpy
 			{
 				playerPosition.floorCoordinates = newCoords;
 				UpdatePlayerImageCoordinates();
-				UI.ChangePanelLocation(playerImage, playerImageCoordinates);
+				UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
 			}
 
 			// if player is crossing a door, loads the new room
@@ -147,8 +145,8 @@ namespace SpyVsSpy
 				// update player's position
 				Coordinates newPosition = CalculatePositionAfterCrossingDoor(doorCrossed, playerPosition.floorCoordinates);
 				playerPosition.floorCoordinates = newPosition;
-				UpdatePlayerImageCoordinates();										// v
-				UI.ChangePanelLocation(playerImage, playerImageCoordinates);   // make these two lines into a new function (Refresh?)
+				UpdatePlayerImageCoordinates();
+				UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
 				// load new room
 				try
 				{
@@ -171,7 +169,7 @@ namespace SpyVsSpy
 			// after a while, player appears at the same place where he died
 			UI.Wait(3000);
 			UI.ChangeImageInPanel(playerImage, aliveImage);
-			UI.ChangePanelLocation(playerImage, playerImageCoordinates);
+			UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
 			UI.ChangePanelVisibility(playerImage, true);
 			alive = true;
 		}
@@ -243,6 +241,7 @@ namespace SpyVsSpy
 		{
 			playerImageCoordinates.x = playerPosition.floorCoordinates.x - 20;
 			playerImageCoordinates.y = playerPosition.floorCoordinates.y - 40;
+			image.location = playerImageCoordinates.ToPoint();
 		}
 
 		// checks if player is crossing a door; if so, sets the variable doorCrossed to the number of that door
@@ -328,6 +327,7 @@ namespace SpyVsSpy
 		{
 			//UI.ChangePanelLocation(furnitureImage, new Coordinates(imagePosition.x, imagePosition.y - 15));
 			image.location = new Point(imagePosition.x, imagePosition.y - 15);
+			UI.UpdateFurnitureOnScreen(UI.roomViewUp, this);
 			// if furniture contained an item, pick it up
 			if (item != -1)
 			{
@@ -346,6 +346,7 @@ namespace SpyVsSpy
 		{
 			//UI.ChangePanelLocation(furnitureImage, imagePosition);
 			image.location = imagePosition.ToPoint();
+			UI.UpdateFurnitureOnScreen(UI.roomViewUp, this);
 		}
 
 		// makes furniture visible
@@ -785,22 +786,7 @@ namespace SpyVsSpy
 		{
 			//UI.ChangeImageInPanel(frame, RoomFilename());
 			frame.images = images;
-			/**
-			foreach (Furniture f in furnitures)
-			{
-				if (f != null)
-				{
-					f.Show();
-				}
-			}
-			foreach (Door d in doors)
-			{
-				if (d != null)
-				{
-					d.Show();
-				}
-			}
-			**/
+			images.Add(Game.players[0].image);
 		}
 
 		// hides all furniture and doors
@@ -977,6 +963,21 @@ namespace SpyVsSpy
 			RedrawRoom('u');
 		}
 		
+		// redraws the area with furniture
+		public static void UpdateFurnitureOnScreen(TransparentPanel panel, Furniture furniture)
+		{
+			Rectangle areaToUpdate = GetRectangleWithMargin(furniture.image.location, furniture.image.size, 15);
+			panel.Invalidate(areaToUpdate);
+			UpdatePlayerOnScreen(panel, 0);
+		}
+
+		// redraws player
+		public static void UpdatePlayerOnScreen(TransparentPanel panel, int player)
+		{
+			Rectangle areaToUpdate = GetRectangleWithMargin(Game.players[player].image.location, Game.players[player].image.size, 5);
+			panel.Invalidate(areaToUpdate);
+		}
+
 		// makes panel visible if visibility==true, otherwise makes it invisible
 		public static void ChangePanelVisibility(TransparentPanel panel, bool visibility)
 		{
@@ -1115,6 +1116,7 @@ namespace SpyVsSpy
 			else
 				roomView = roomViewDown;
 
+			/**
 			int nearbyFurniture = Game.currentRoom.FurnitureNearby(Game.players[0].playerPosition.floorCoordinates);
 			foreach (int i in Game.currentRoom.furnituresPresent)
 			{
@@ -1137,10 +1139,12 @@ namespace SpyVsSpy
 			}
 			//roomView.Invalidate(new Rectangle(Game.players[0].playerImage.Location, Game.players[0].playerImage.Size));
 			//Game.players[0].playerImage.Invalidate();
+			**/
 			roomView.Invalidate(GetRectangleWithMargin(Game.players[0].playerImage.Location, Game.players[0].playerImage.Size, 5));
 			Game.players[0].playerImage.Invalidate();
 		}
 
+		// returns Rectangle with a given margin around a given area
 		static Rectangle GetRectangleWithMargin(Point startingPoint, Size startingSize, int margin)
 		{
 			Point newPoint = new Point(startingPoint.X - margin, startingPoint.Y - margin);
