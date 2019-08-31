@@ -329,7 +329,7 @@ namespace SpyVsSpy
 		{
 			//UI.ChangePanelLocation(furnitureImage, new Coordinates(imagePosition.x, imagePosition.y - 15));
 			image.location = new Point(imagePosition.x, imagePosition.y - 15);
-			UI.UpdateFurnitureOnScreen(UI.roomViewUp, this);
+			UI.UpdateObject(UI.roomViewUp, image, 15);
 			// if furniture contained an item, pick it up
 			if (item != -1)
 			{
@@ -348,7 +348,7 @@ namespace SpyVsSpy
 		{
 			//UI.ChangePanelLocation(furnitureImage, imagePosition);
 			image.location = imagePosition.ToPoint();
-			UI.UpdateFurnitureOnScreen(UI.roomViewUp, this);
+			UI.UpdateObject(UI.roomViewUp, image, 15);
 		}
 
 		// makes furniture visible
@@ -527,7 +527,8 @@ namespace SpyVsSpy
 		void Open()
 		{
 			//UI.ChangeImageInPanel(doorImage, openFileName);
-			image.filename = closedFileName;
+			image.filename = openFileName;
+			UI.UpdateObject(UI.roomViewUp, image, 0);
 			open = true;
 		}
 
@@ -535,7 +536,8 @@ namespace SpyVsSpy
 		void Close()
 		{
 			//UI.ChangeImageInPanel(doorImage, closedFileName);
-			image.filename = openFileName;
+			image.filename = closedFileName;
+			UI.UpdateObject(UI.roomViewUp, image, 0);
 			open = false;
 		}
 
@@ -789,6 +791,7 @@ namespace SpyVsSpy
 			//UI.ChangeImageInPanel(frame, RoomFilename());
 			frame.images = images;
 			images.Add(Game.players[0].image);
+			frame.Invalidate();
 		}
 
 		// hides all furniture and doors
@@ -959,6 +962,11 @@ namespace SpyVsSpy
 		{
 			panel.ChangeImage(baseImageAddress + filename, panel.Size);
 		}
+
+		public static void ChangeImage(ImageContainer image, string filename)
+		{
+			image.filename = filename;
+		}
 		
 		// changes the location of given panel
 		public static void ChangePanelLocation(TransparentPanel panel, Coordinates coords)
@@ -973,6 +981,7 @@ namespace SpyVsSpy
 			image.location = newPosition;
 		}
 
+		// makes player visible or invisible
 		public static void ChangePlayerVisibility(ImageContainer image, bool visibility)
 		{
 			if (visibility)
@@ -987,9 +996,9 @@ namespace SpyVsSpy
 		}
 		
 		// redraws the area with furniture
-		public static void UpdateFurnitureOnScreen(TransparentPanel panel, Furniture furniture)
+		public static void UpdateObject(TransparentPanel panel, ImageContainer image, int margin)
 		{
-			Rectangle areaToUpdate = GetRectangleWithMargin(furniture.image.location, furniture.image.size, 15);
+			Rectangle areaToUpdate = GetRectangleWithMargin(image.location, image.size, margin);
 			panel.Invalidate(areaToUpdate);
 			UpdatePlayerOnScreen(panel, 0);
 		}
