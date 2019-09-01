@@ -82,6 +82,7 @@ namespace SpyVsSpy
 			Triplet firstRoomCoords = UI.LoadLevel(1);
 			currentRoom = levelMap[firstRoomCoords.x, firstRoomCoords.y, firstRoomCoords.z];
 			players[0] = new Player(0);
+			players[1] = new Player(1);
 			currentRoom.LoadRoom(UI.roomViewUp);
 			UI.Countdown();
 		}
@@ -96,6 +97,7 @@ namespace SpyVsSpy
 		Coordinates playerImageCoordinates = new Coordinates(0, 0);
 		public ImageContainer image;
 		public bool alive = true;
+		public int secondsLeft = 120;
 		public PictureBox playerPB;
 
 		int type;		// 0 for human, 1 for computer
@@ -164,6 +166,7 @@ namespace SpyVsSpy
 		public void Die()
 		{
 			alive = false;
+			secondsLeft -= 15;
 			UI.ChangeImageInPictureBox(playerPB, deadImage);
 			UI.FadeAway(playerPB);
 			// after a while, player appears at the same place where he died
@@ -642,7 +645,8 @@ namespace SpyVsSpy
 	public class Trap
 	{
 		public int type;    // 0-bomb, 1-spring, 2-bucket, 3-gun, 4-timebomb
-		
+		public int objectType;
+
 		public int MatchDisarm()
 		{
 			return type;
@@ -651,6 +655,16 @@ namespace SpyVsSpy
 		public void Activate(int player)
 		{
 			Game.players[player].Die();
+		}
+
+		public void Set(Furniture furniture)
+		{
+
+		}
+
+		public void Set(Door door)
+		{
+
 		}
 	}
 
@@ -847,14 +861,13 @@ namespace SpyVsSpy
 		public static string baseImageAddress = "../../Assets/Images/";
 		static string baseMapAddress = "../../Assets/LevelMaps/";
 		
+		// fundamental parts of the UI
 		public static TransparentPanel roomViewUp;
 		public static TransparentPanel roomViewDown;
 		public static TransparentPanel sidePanelUp;
 		public static TransparentPanel sidePanelDown;
 		public static TextPanel countdownUp;
 		public static TextPanel countdownDown;
-
-		public static int secondsLeft = 120;
 
 		// stops the application for the given amount of miliseconds
 		public static void Wait(int miliseconds)
@@ -887,11 +900,17 @@ namespace SpyVsSpy
 			countdown.Start();
 			countdown.Tick += (s, e) =>
 			{
-				secondsLeft--;
+				Game.players[0].secondsLeft--;
+				Game.players[1].secondsLeft--;
 				UpdateTimer();
-				if (secondsLeft == 0)
+				if (Game.players[0].secondsLeft <= 0)
 				{
 					Game.players[0].Die();
+					countdown.Stop();
+				}
+				if (Game.players[0].secondsLeft <= 0)
+				{
+					Game.players[1].Die();
 					countdown.Stop();
 				}
 			};
@@ -1086,10 +1105,15 @@ namespace SpyVsSpy
 		// updates text on timer
 		static void UpdateTimer()
 		{
-			int minutes = secondsLeft / 60;
-			int seconds = secondsLeft % 60;
-			string timeText = Convert.ToString(minutes) + ":" + Convert.ToString(seconds);
-			countdownUp.UpdateText(timeText);
+			int minutesHuman = Game.players[0].secondsLeft / 60;
+			int secondsHuman = Game.players[0].secondsLeft % 60;
+			string timeTextHuman = Convert.ToString(minutesHuman) + ":" + Convert.ToString(secondsHuman);
+			countdownUp.UpdateText(timeTextHuman);
+
+			int minutesComputer = Game.players[1].secondsLeft / 60;
+			int secondsComputer = Game.players[1].secondsLeft % 60;
+			string timeTextComputer = Convert.ToString(minutesComputer) + ":" + Convert.ToString(secondsComputer);
+			countdownDown.UpdateText(timeTextComputer);
 		}
 
 		// loads main parts of the UI
@@ -1105,7 +1129,6 @@ namespace SpyVsSpy
 			sidePanelUp.Location = new Point(540, 20);
 			sidePanelUp.Size = new Size(200, 200);
 			parentForm.Controls.Add(sidePanelUp);
-
 			
 			countdownUp = new TextPanel();
 			countdownUp.Location = new Point(0, 0);
