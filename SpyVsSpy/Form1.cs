@@ -85,6 +85,7 @@ namespace SpyVsSpy
 			players[1] = new Player(1);
 			currentRoom.LoadRoom(UI.roomViewUp);
 			UI.Countdown();
+			//ComputerAI.Start(players[1]);
 		}
 	}
 
@@ -892,6 +893,24 @@ namespace SpyVsSpy
 		string RoomFilename()
 		{
 			return "room" + color + ".png";
+		}
+	}
+
+	public class ComputerAI
+	{
+		static Player computer;
+
+		public static void Start(Player player)
+		{
+			computer = player;
+
+			while (true)
+			{
+				player.MovePlayer('R');
+				UI.Wait(1000);
+				player.MovePlayer('L');
+				UI.Wait(1000);
+			}
 		}
 	}
 
