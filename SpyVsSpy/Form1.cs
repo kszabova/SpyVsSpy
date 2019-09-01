@@ -108,12 +108,8 @@ namespace SpyVsSpy
 		{
 			aliveImage = "playerWhite.png";
 			deadImage = "playerWhiteDead.png";
-			//image = new ImageContainer(aliveImage, playerImageCoordinates.ToPoint(), imageSize);
 			UpdatePlayerImageCoordinates();
-			playerPB = new PictureBox();
-			playerPB.Location = playerImageCoordinates.ToPoint();
-			playerPB.Size = imageSize;
-			playerPB.Image = Image.FromFile(UI.baseImageAddress + aliveImage);
+			playerPB = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
 			UI.roomViewUp.Controls.Add(playerPB);
 			UI.roomViewUp.BackColor = Color.Transparent;
 		}
@@ -140,8 +136,7 @@ namespace SpyVsSpy
 			{
 				playerPosition.floorCoordinates = newCoords;
 				UpdatePlayerImageCoordinates();
-				//UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
-				playerPB.Location = playerImageCoordinates.ToPoint();
+				UI.ChangePictureBoxLocation(playerPB, playerImageCoordinates);
 			}
 
 			// if player is crossing a door, loads the new room
@@ -150,9 +145,9 @@ namespace SpyVsSpy
 				// update player's position
 				Coordinates newPosition = CalculatePositionAfterCrossingDoor(doorCrossed, playerPosition.floorCoordinates);
 				playerPosition.floorCoordinates = newPosition;
-				UpdatePlayerImageCoordinates();
-				//UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
-				playerPB.Location = playerImageCoordinates.ToPoint();
+				UpdatePlayerImageCoordinates();                                     // v
+				UI.ChangePictureBoxLocation(playerPB, playerImageCoordinates);   // make these two lines into a new function (Refresh?)
+				
 				// load new room
 				try
 				{
@@ -169,24 +164,13 @@ namespace SpyVsSpy
 		public void Die()
 		{
 			alive = false;
-			UI.secondsLeft -= 15;
-			//image.filename = deadImage;
-			playerPB.Image = Image.FromFile(UI.baseImageAddress + deadImage);
-			//UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
-			//UI.FadeAway(playerImage);
-			for (int i = 0; i < 5; ++i)
-			{
-				playerPB.Location = new Point(playerPB.Location.X, playerPB.Location.Y - 5);
-			}
-			playerPB.Visible = false;
+			UI.ChangeImageInPictureBox(playerPB, deadImage);
+			UI.FadeAway(playerPB);
 			// after a while, player appears at the same place where he died
 			UI.Wait(3000);
-			//image.filename = aliveImage;
-			UpdatePlayerImageCoordinates();
-			playerPB.Visible = true;
-			playerPB.Image = Image.FromFile(UI.baseImageAddress + aliveImage);
-			//UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
-			//UI.ChangePlayerVisibility(image, true);
+			UI.ChangeImageInPictureBox(playerPB, aliveImage);
+			UI.ChangePictureBoxLocation(playerPB, playerImageCoordinates);
+			UI.ChangePictureBoxVisibility(playerPB, true);
 			alive = true;
 		}
 
@@ -769,7 +753,6 @@ namespace SpyVsSpy
 		public void LoadRoom(TransparentPanel frame)
 		{
 			frame.images = images;
-			//images.Add(Game.players[0].image);
 			frame.Invalidate();
 		}
 
@@ -909,7 +892,44 @@ namespace SpyVsSpy
 			parent.Controls.Add(panel);
 			return panel;
 		}
-		
+
+		// creates a new PictureBox in the specified position and returns the PictureBox instance
+		public static PictureBox CreatePictureBox(string filename, Coordinates coords, Size size)
+		{
+			PictureBox pb = new PictureBox();
+			pb.ImageLocation = baseImageAddress + filename;
+			pb.Size = size;
+			pb.SizeMode = PictureBoxSizeMode.AutoSize;
+			pb.Location = new Point(coords.x, coords.y);
+			parentForm.Controls.Add(pb);
+			return pb;
+		}
+
+		// changes the image in given PictureBox
+		public static void ChangeImageInPictureBox(PictureBox pb, string filename)
+		{
+			pb.ImageLocation = baseImageAddress + filename;
+		}
+
+		// changes the location of given PictureBox
+		public static void ChangePictureBoxLocation(PictureBox pb, Coordinates coords)
+		{
+			pb.Location = new Point(coords.x, coords.y);
+		}
+
+		// makes PictureBox visible or invisible
+		public static void ChangePictureBoxVisibility(PictureBox pb, bool visibility)
+		{
+			if (visibility)
+			{
+				pb.Visible = true;
+			}
+			else
+			{
+				pb.Visible = false;
+			}
+		}
+
 		// changes the image in given panel
 		public static void ChangeImageInPanel(TransparentPanel panel, string filename)
 		{
@@ -976,18 +996,18 @@ namespace SpyVsSpy
 				panel.Visible = false;
 			}
 		}
-		
+
 		// incrementally puts image higher and higher until it eventually disappears
-		public static void FadeAway(TransparentPanel panel)
+		public static void FadeAway(PictureBox pb)
 		{
 			for (int i = 0; i < 10; ++i)
 			{
-				ChangeImageLocation(Game.players[0].image, new Point(Game.players[0].image.location.X, Game.players[0].image.location.Y - 10));
-				UpdatePlayerOnScreen(roomViewUp, 0);
+				pb.Location = new Point(pb.Location.X, pb.Location.Y - 10);
 				Wait(200);
 			}
-			ChangePlayerVisibility(Game.players[0].image, false);
+			ChangePictureBoxVisibility(pb, false);
 		}
+
 
 		// loads map of the rooms from file, returns starting room
 		public static Triplet LoadLevel(int level)
