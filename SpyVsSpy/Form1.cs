@@ -67,7 +67,7 @@ namespace SpyVsSpy
 		{
 			Triplet leadsTo = currentRoom.doors[door].leadsTo;
 			Room nextRoom = levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
-			currentRoom.images.Remove(players[0].image);
+			//currentRoom.images.Remove(players[0].image);
 			nextRoom.LoadRoom(UI.roomViewUp);
 			currentRoom = nextRoom;
 		}
@@ -96,6 +96,7 @@ namespace SpyVsSpy
 		Coordinates playerImageCoordinates = new Coordinates(0, 0);
 		public ImageContainer image;
 		public bool alive = true;
+		public PictureBox playerPB;
 
 		int type;		// 0 for human, 1 for computer
 		bool[] items = new bool[5];     // 0-passport, 1-key, 2-money, 3-secret plans, 4-suitcase
@@ -107,8 +108,14 @@ namespace SpyVsSpy
 		{
 			aliveImage = "playerWhite.png";
 			deadImage = "playerWhiteDead.png";
-			image = new ImageContainer(aliveImage, playerImageCoordinates.ToPoint(), imageSize);
+			//image = new ImageContainer(aliveImage, playerImageCoordinates.ToPoint(), imageSize);
 			UpdatePlayerImageCoordinates();
+			playerPB = new PictureBox();
+			playerPB.Location = playerImageCoordinates.ToPoint();
+			playerPB.Size = imageSize;
+			playerPB.Image = Image.FromFile(UI.baseImageAddress + aliveImage);
+			UI.roomViewUp.Controls.Add(playerPB);
+			UI.roomViewUp.BackColor = Color.Transparent;
 		}
 
 		// moves player in given direction and updates his position on the screen
@@ -133,7 +140,8 @@ namespace SpyVsSpy
 			{
 				playerPosition.floorCoordinates = newCoords;
 				UpdatePlayerImageCoordinates();
-				UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
+				//UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
+				playerPB.Location = playerImageCoordinates.ToPoint();
 			}
 
 			// if player is crossing a door, loads the new room
@@ -143,7 +151,8 @@ namespace SpyVsSpy
 				Coordinates newPosition = CalculatePositionAfterCrossingDoor(doorCrossed, playerPosition.floorCoordinates);
 				playerPosition.floorCoordinates = newPosition;
 				UpdatePlayerImageCoordinates();
-				UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
+				//UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
+				playerPB.Location = playerImageCoordinates.ToPoint();
 				// load new room
 				try
 				{
@@ -161,15 +170,23 @@ namespace SpyVsSpy
 		{
 			alive = false;
 			UI.secondsLeft -= 15;
-			image.filename = deadImage;
-			UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
-			UI.FadeAway(playerImage);
+			//image.filename = deadImage;
+			playerPB.Image = Image.FromFile(UI.baseImageAddress + deadImage);
+			//UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
+			//UI.FadeAway(playerImage);
+			for (int i = 0; i < 5; ++i)
+			{
+				playerPB.Location = new Point(playerPB.Location.X, playerPB.Location.Y - 5);
+			}
+			playerPB.Visible = false;
 			// after a while, player appears at the same place where he died
 			UI.Wait(3000);
-			image.filename = aliveImage;
+			//image.filename = aliveImage;
 			UpdatePlayerImageCoordinates();
-			UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
-			UI.ChangePlayerVisibility(image, true);
+			playerPB.Visible = true;
+			playerPB.Image = Image.FromFile(UI.baseImageAddress + aliveImage);
+			//UI.UpdatePlayerOnScreen(UI.roomViewUp, 0);
+			//UI.ChangePlayerVisibility(image, true);
 			alive = true;
 		}
 
@@ -240,7 +257,7 @@ namespace SpyVsSpy
 		{
 			playerImageCoordinates.x = playerPosition.floorCoordinates.x - 20;
 			playerImageCoordinates.y = playerPosition.floorCoordinates.y - 40;
-			image.location = playerImageCoordinates.ToPoint();
+			//image.location = playerImageCoordinates.ToPoint();
 		}
 
 		// checks if player is crossing a door; if so, sets the variable doorCrossed to the number of that door
@@ -752,7 +769,7 @@ namespace SpyVsSpy
 		public void LoadRoom(TransparentPanel frame)
 		{
 			frame.images = images;
-			images.Add(Game.players[0].image);
+			//images.Add(Game.players[0].image);
 			frame.Invalidate();
 		}
 
@@ -937,7 +954,7 @@ namespace SpyVsSpy
 		{
 			Rectangle areaToUpdate = GetRectangleWithMargin(image.location, image.size, margin);
 			panel.Invalidate(areaToUpdate);
-			UpdatePlayerOnScreen(panel, 0);
+			//UpdatePlayerOnScreen(panel, 0);
 		}
 
 		// redraws player
