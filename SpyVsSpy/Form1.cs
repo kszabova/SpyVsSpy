@@ -104,16 +104,32 @@ namespace SpyVsSpy
 		bool[] items = new bool[5];     // 0-passport, 1-key, 2-money, 3-secret plans, 4-suitcase
 		string aliveImage;
 		string deadImage;
+		char view;
 
 		// !! TEMPORARY !! - will depend on type of player, reduce repeating code etc
 		public Player(int type)
 		{
-			aliveImage = "playerWhite.png";
-			deadImage = "playerWhiteDead.png";
-			UpdatePlayerImageCoordinates();
-			playerPB = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
-			UI.roomViewUp.Controls.Add(playerPB);
-			UI.roomViewUp.BackColor = Color.Transparent;
+			this.type = type;
+			if (type == 0)
+			{
+				UI.roomViewUp.BackColor = Color.Transparent;		// ?? why doesn't this work when it is in UI.LoadUI only?
+				view = 'u';
+				aliveImage = "playerWhite.png";
+				deadImage = "playerWhiteDead.png";
+				UpdatePlayerImageCoordinates();
+				playerPB = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
+				DisplayPlayerInView();
+			}
+			else if (type == 1)
+			{
+				view = 'd';
+				aliveImage = "playerWhite.png";
+				deadImage = "playerWhiteDead.png";
+				UpdatePlayerImageCoordinates();
+				playerPB = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
+				UI.roomViewDown.BackColor = Color.Transparent;
+				DisplayPlayerInView();
+			}
 		}
 
 		// moves player in given direction and updates his position on the screen
@@ -237,6 +253,32 @@ namespace SpyVsSpy
 				Item.HideFromTrapulator(i, type);
 			}
 			items[4] = false;
+		}
+
+		// displays player image in given part of the screen
+		void DisplayPlayerInView()
+		{
+			if (view == 'u')
+			{
+				UI.roomViewUp.Controls.Add(playerPB);
+			}
+			else
+			{
+				UI.roomViewDown.Controls.Add(playerPB);
+			}
+		}
+
+		// removes player image from current panel
+		void RemovePlayerFromView()
+		{
+			if (view == 'u')
+			{
+				UI.roomViewUp.Controls.Remove(playerPB);
+			}
+			else
+			{
+				UI.roomViewDown.Controls.Remove(playerPB);
+			}
 		}
 
 		// updates the coordinates of playerImage when playerPosition changes
@@ -1042,7 +1084,6 @@ namespace SpyVsSpy
 			ChangePictureBoxVisibility(pb, false);
 		}
 
-
 		// loads map of the rooms from file, returns starting room
 		public static Triplet LoadLevel(int level)
 		{
@@ -1124,6 +1165,7 @@ namespace SpyVsSpy
 			roomViewUp.Location = new Point(20, 20);
 			roomViewUp.Size = new Size(500, 200);
 			parentForm.Controls.Add(roomViewUp);
+			roomViewUp.BackColor = Color.Transparent;
 
 			sidePanelUp = new TransparentPanel();
 			sidePanelUp.Location = new Point(540, 20);
@@ -1139,6 +1181,7 @@ namespace SpyVsSpy
 			roomViewDown.Location = new Point(20, 240);
 			roomViewDown.Size = new Size(500, 200);
 			parentForm.Controls.Add(roomViewDown);
+			roomViewDown.BackColor = Color.Transparent;
 
 			sidePanelDown = new TransparentPanel();
 			sidePanelDown.Location = new Point(540, 240);
