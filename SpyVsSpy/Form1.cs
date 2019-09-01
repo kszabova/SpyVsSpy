@@ -641,7 +641,22 @@ namespace SpyVsSpy
 
 	public class Trap
 	{
+		public int type;    // 0-bomb, 1-spring, 2-bucket, 3-gun, 4-timebomb
+		
+		public int MatchDisarm()
+		{
+			return type;
+		}
 
+		public void Activate(int player)
+		{
+			Game.players[player].Die();
+		}
+	}
+
+	public class Disarm
+	{
+		public int type;	// 0-water bucket, 1-wire cutter, 2-umbrella, 3-scissors
 	}
 
 	public class Position
