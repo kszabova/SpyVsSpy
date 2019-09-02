@@ -65,22 +65,18 @@ namespace SpyVsSpy
 		}
 
 		// loads next room given door in current room
-		public static void LoadRoomByDoor(int door, int framePosition)
+		public static void LoadRoomByDoor(int door, int player)
 		{
 			Triplet leadsTo = upperRoom.doors[door].leadsTo;
 			Room nextRoom = levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
-			if (framePosition == 0)
+			if (players[player].panelOnScreen == 0)
 			{
-				upperRoom.positionOnScreen = -1;
 				nextRoom.LoadRoom(UI.roomViewUp);
-				nextRoom.positionOnScreen = 0;
 				upperRoom = nextRoom;
 			}
 			else
 			{
-				lowerRoom.positionOnScreen = -1;
 				nextRoom.LoadRoom(UI.roomViewDown);
-				nextRoom.positionOnScreen = 1;
 				lowerRoom = nextRoom;
 			}
 		}
@@ -110,6 +106,7 @@ namespace SpyVsSpy
 	// player functionality
 	public class Player
 	{
+		public int panelOnScreen;
 		public Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 141));
 		public TransparentPanel playerImage;
 		public Size imageSize = new Size(40, 40);
@@ -123,25 +120,23 @@ namespace SpyVsSpy
 		bool[] items = new bool[5];     // 0-passport, 1-key, 2-money, 3-secret plans, 4-suitcase
 		string aliveImage;
 		string deadImage;
-		char view;
 
 		// !! TEMPORARY !! - will depend on type of player, reduce repeating code etc
 		public Player(int type)
 		{
 			this.type = type;
+			panelOnScreen = type;			// starting panel is the same as player type
 			if (type == 0)
 			{
-				UI.roomViewUp.BackColor = Color.Transparent;		// ?? why doesn't this work when it is in UI.LoadUI only?
-				view = 'u';
 				aliveImage = "playerWhite.png";
 				deadImage = "playerWhiteDead.png";
 				UpdatePlayerImageCoordinates();
 				playerPB = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
+				UI.roomViewUp.BackColor = Color.Transparent;		// ?? why doesn't this work when it is in UI.LoadUI only?
 				DisplayPlayerInView();
 			}
 			else if (type == 1)
 			{
-				view = 'd';
 				aliveImage = "playerWhite.png";
 				deadImage = "playerWhiteDead.png";
 				UpdatePlayerImageCoordinates();
@@ -277,7 +272,7 @@ namespace SpyVsSpy
 		// displays player image in given part of the screen
 		void DisplayPlayerInView()
 		{
-			if (view == 'u')
+			if (panelOnScreen == 0)
 			{
 				UI.roomViewUp.Controls.Add(playerPB);
 			}
@@ -290,7 +285,7 @@ namespace SpyVsSpy
 		// removes player image from current panel
 		void RemovePlayerFromView()
 		{
-			if (view == 'u')
+			if (panelOnScreen == 0)
 			{
 				UI.roomViewUp.Controls.Remove(playerPB);
 			}
@@ -825,6 +820,7 @@ namespace SpyVsSpy
 	public class Room
 	{
 		char color;
+		int occupiedBy;		// indicates which player is currently in the room, -1 if none, 2 if both
 		public int positionOnScreen = -1;		// -1 - not present, 0-upper frame, 1-lower frame
 		public Furniture[] furnitures = new Furniture[6];
 		public Door[] doors = new Door[4];
@@ -845,6 +841,22 @@ namespace SpyVsSpy
 		{
 			frame.images = images;
 			frame.Invalidate();
+		}
+
+		// sets room to default state
+		public void LeaveRoom(int player)
+		{
+			// reset position on screen to none
+			positionOnScreen = -1;
+			// sets player who is currently in the room
+			if (occupiedBy == 2)
+			{
+				occupiedBy = (-1 + player) * -1;		// result will be opposite of player = the player who didn't leave stays
+			}
+			else
+			{
+				occupiedBy = -1;
+			}
 		}
 
 		// returns the number of furniture next to which the player is standing, -1 if none
