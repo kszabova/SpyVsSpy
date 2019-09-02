@@ -65,23 +65,24 @@ namespace SpyVsSpy
 		}
 
 		// loads next room given door in current room
-		public static void LoadRoomByDoor(int door, Room currentRoom)
+		public static void LoadRoomByDoor(int door, int framePosition)
 		{
 			Triplet leadsTo = upperRoom.doors[door].leadsTo;
 			Room nextRoom = levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
-			if (currentRoom.positionOnScreen == 0)
+			if (framePosition == 0)
 			{
+				upperRoom.positionOnScreen = -1;
 				nextRoom.LoadRoom(UI.roomViewUp);
 				nextRoom.positionOnScreen = 0;
 				upperRoom = nextRoom;
 			}
 			else
 			{
+				lowerRoom.positionOnScreen = -1;
 				nextRoom.LoadRoom(UI.roomViewDown);
 				nextRoom.positionOnScreen = 1;
 				lowerRoom = nextRoom;
 			}
-			currentRoom.positionOnScreen = -1;
 		}
 
 		// FOR NOW JUST FOR TESTING
@@ -91,14 +92,18 @@ namespace SpyVsSpy
 			UI.roomViewUp = UI.CreateImage("placeholderBackground.png", new Coordinates(20, 20), new Size(500, 200), parent);
 			UI.sidePanelUp = UI.CreateImage("trapulatorPlaceholder.png", new Coordinates(540, 20), new Size(500, 200), parent);
 			Item.InitializeItems();
-			Triplet firstRoomCoords = UI.LoadLevel(1);
-			upperRoom = levelMap[firstRoomCoords.x, firstRoomCoords.y, firstRoomCoords.z];
+			Triplet humanFirstRoom;
+			Triplet computerFirstRoom;
+			UI.LoadLevel(1, out humanFirstRoom, out computerFirstRoom);
+			upperRoom = levelMap[humanFirstRoom.x, humanFirstRoom.y, humanFirstRoom.z];
+			lowerRoom = levelMap[computerFirstRoom.x, computerFirstRoom.y, computerFirstRoom.z];
 			players[0] = new Player(0);
 			players[1] = new Player(1);
 			upperRoom.LoadRoom(UI.roomViewUp);
 			upperRoom.positionOnScreen = 0;
+			lowerRoom.LoadRoom(UI.roomViewDown);
+			lowerRoom.positionOnScreen = 1;
 			UI.Countdown();
-			//ComputerAI.Start(players[1]);
 		}
 	}
 
@@ -183,7 +188,7 @@ namespace SpyVsSpy
 				// load new room
 				try
 				{
-					Game.LoadRoomByDoor(doorCrossed, Game.upperRoom);
+					Game.LoadRoomByDoor(doorCrossed, type);
 				}
 				catch
 				{
@@ -1117,8 +1122,8 @@ namespace SpyVsSpy
 			ChangePictureBoxVisibility(pb, false);
 		}
 
-		// loads map of the rooms from file, returns starting room
-		public static Triplet LoadLevel(int level)
+		// loads map of the rooms from file, sets starting room for player and computer
+		public static void LoadLevel(int level, out Triplet humanRoom, out Triplet computerRoom)
 		{
 			string filename = baseMapAddress + "level" + level.ToString() + ".txt";
 			Debug.WriteLine(filename);
@@ -1172,8 +1177,10 @@ namespace SpyVsSpy
 							currentRoom.AddDoor(Convert.ToInt32(doors[i]), leadsTo);
 						}
 					}
-			string[] firstRoomSplit = sr.ReadLine().Split(',');
-			return new Triplet(Convert.ToInt32(firstRoomSplit[0]), Convert.ToInt32(firstRoomSplit[1]), Convert.ToInt32(firstRoomSplit[2]));
+			string[] humanRoomSplit = sr.ReadLine().Split(',');
+			string[] computerRoomSplit = sr.ReadLine().Split(',');
+			humanRoom = new Triplet(Convert.ToInt32(humanRoomSplit[0]), Convert.ToInt32(humanRoomSplit[1]), Convert.ToInt32(humanRoomSplit[2]));
+			computerRoom = new Triplet(Convert.ToInt32(computerRoomSplit[0]), Convert.ToInt32(computerRoomSplit[1]), Convert.ToInt32(computerRoomSplit[2]));
 		}
 
 		// updates text on timer
