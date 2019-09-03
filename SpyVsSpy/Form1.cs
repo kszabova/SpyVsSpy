@@ -69,15 +69,22 @@ namespace SpyVsSpy
 		{
 			Triplet leadsTo = upperRoom.doors[door].leadsTo;
 			Room nextRoom = levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
-			if (players[player].panelOnScreen == 0)
+			if (nextRoom.IsOccupied())
 			{
-				nextRoom.LoadRoom(UI.roomViewUp);
-				upperRoom = nextRoom;
+				players[player].SwitchPanel();
 			}
 			else
 			{
-				nextRoom.LoadRoom(UI.roomViewDown);
-				lowerRoom = nextRoom;
+				if (players[player].panelOnScreen == 0)
+				{
+					nextRoom.LoadRoom(UI.roomViewUp);
+					upperRoom = nextRoom;
+				}
+				else
+				{
+					nextRoom.LoadRoom(UI.roomViewDown);
+					lowerRoom = nextRoom;
+				}
 			}
 		}
 
@@ -267,6 +274,13 @@ namespace SpyVsSpy
 				Item.HideFromTrapulator(i, type);
 			}
 			items[4] = false;
+		}
+
+		// changes where player should be drawn
+		public void SwitchPanel()
+		{
+			panelOnScreen = panelOnScreen == 0 ? 1 : 0;
+			DisplayPlayerInView();
 		}
 
 		// displays player image in given part of the screen
@@ -918,6 +932,12 @@ namespace SpyVsSpy
 			Random random = new Random();
 			int index = random.Next(furnituresPresent.Count);
 			return furnituresPresent[index];
+		}
+
+		// returns true if no player is in the room
+		public bool IsOccupied()
+		{
+			return occupiedBy != -1;
 		}
 
 		// returns the filename of background image depending on the color of room
