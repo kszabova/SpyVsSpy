@@ -18,8 +18,9 @@ namespace SpyVsSpy
 		public static Room[,,] levelMap;		// contains plan of current level
 
 		public static Player[] players = new Player[2];
-		public static Room upperRoom;
-		public static Room lowerRoom;
+		public static Room[] rooms = new Room[2];
+
+		static Room noRoom = new Room('X');		// placeholder object for when no room should be drawn into panel
 
 		// handles events when key is pressed
 		public static void EventOnKeyPress(char key)
@@ -36,26 +37,26 @@ namespace SpyVsSpy
 
 					// examining furniture and opening doors
 					case 'X':
-						int closeFurniture = upperRoom.FurnitureNearby(players[0].playerPosition.floorCoordinates);
+						int closeFurniture = rooms[0].FurnitureNearby(players[0].playerPosition.floorCoordinates);
 						// player is standing in front of a furniture
 						if (closeFurniture != -1)
 						{
-							upperRoom.furnitures[closeFurniture].Lift(0);
+							rooms[0].furnitures[closeFurniture].Lift(0);
 							UI.Wait(500);
-							upperRoom.furnitures[closeFurniture].Release();
+							rooms[0].furnitures[closeFurniture].Release();
 						}
 						else
 						{
-							int closeDoors = upperRoom.DoorNearby(players[0].playerPosition.floorCoordinates);
+							int closeDoors = rooms[0].DoorNearby(players[0].playerPosition.floorCoordinates);
 							// player is standing in front of a door
 							if (closeDoors != -1)
 							{
-								upperRoom.doors[closeDoors].Switch();
+								rooms[0].doors[closeDoors].Switch();
 							}
 							// no furniture and no door => drop item in a random furniture in the room
 							else
 							{
-								int furniture = upperRoom.GetRandomFurniture();
+								int furniture = rooms[0].GetRandomFurniture();
 								players[0].DropItemToFurniture(furniture);
 							}
 						}
@@ -67,8 +68,9 @@ namespace SpyVsSpy
 		// loads next room given door in current room
 		public static void LoadRoomByDoor(int door, int player)
 		{
-			Triplet leadsTo = upperRoom.doors[door].leadsTo;
+			Triplet leadsTo = rooms[player].doors[door].leadsTo;
 			Room nextRoom = levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
+			rooms[players[player].panelOnScreen].LeaveRoom(player);
 			if (nextRoom.IsOccupied())
 			{
 				players[player].SwitchPanel();
@@ -77,14 +79,13 @@ namespace SpyVsSpy
 			{
 				if (players[player].panelOnScreen == 0)
 				{
-					nextRoom.LoadRoom(UI.roomViewUp);
-					upperRoom = nextRoom;
+					nextRoom.LoadRoom(UI.roomViewUp, player);
 				}
 				else
 				{
-					nextRoom.LoadRoom(UI.roomViewDown);
-					lowerRoom = nextRoom;
+					nextRoom.LoadRoom(UI.roomViewDown, player);
 				}
+				rooms[player] = nextRoom;
 			}
 		}
 
@@ -92,20 +93,16 @@ namespace SpyVsSpy
 		public static void Initialize(Form1 parent)
 		{
 			UI.parentForm = parent;
-			UI.roomViewUp = UI.CreateImage("placeholderBackground.png", new Coordinates(20, 20), new Size(500, 200), parent);
-			UI.sidePanelUp = UI.CreateImage("trapulatorPlaceholder.png", new Coordinates(540, 20), new Size(500, 200), parent);
 			Item.InitializeItems();
 			Triplet humanFirstRoom;
 			Triplet computerFirstRoom;
 			UI.LoadLevel(1, out humanFirstRoom, out computerFirstRoom);
-			upperRoom = levelMap[humanFirstRoom.x, humanFirstRoom.y, humanFirstRoom.z];
-			lowerRoom = levelMap[computerFirstRoom.x, computerFirstRoom.y, computerFirstRoom.z];
+			rooms[0] = levelMap[humanFirstRoom.x, humanFirstRoom.y, humanFirstRoom.z];
+			rooms[1] = levelMap[computerFirstRoom.x, computerFirstRoom.y, computerFirstRoom.z];
 			players[0] = new Player(0);
 			players[1] = new Player(1);
-			upperRoom.LoadRoom(UI.roomViewUp);
-			upperRoom.positionOnScreen = 0;
-			lowerRoom.LoadRoom(UI.roomViewDown);
-			lowerRoom.positionOnScreen = 1;
+			rooms[0].LoadRoom(UI.roomViewUp, 0);
+			rooms[1].LoadRoom(UI.roomViewDown, 1);
 			UI.Countdown();
 		}
 	}
@@ -266,7 +263,7 @@ namespace SpyVsSpy
 		public void DropItemToFurniture(int furniture)
 		{
 			int item = ItemInPosession();
-			Game.upperRoom.furnitures[furniture].item = item;
+			Game.rooms[0].furnitures[furniture].item = item;
 			// set all items to false; if player only had one item, it will get dropped; if they had a suitcase, they will lose all items
 			for (int i = 0; i < 4; ++i)
 			{
@@ -322,7 +319,7 @@ namespace SpyVsSpy
 		{
 			for (int i = 0; i < 4; ++i)
 			{
-				if (Game.upperRoom.doors[i] != null && Door.PositionInDoor(i, pos) && Game.upperRoom.doors[i].open)
+				if (Game.rooms[0].doors[i] != null && Door.PositionInDoor(i, pos) && Game.rooms[0].doors[i].open)
 				{
 					doorCrossed = i;
 				}
@@ -835,7 +832,6 @@ namespace SpyVsSpy
 	{
 		char color;
 		int occupiedBy;		// indicates which player is currently in the room, -1 if none, 2 if both
-		public int positionOnScreen = -1;		// -1 - not present, 0-upper frame, 1-lower frame
 		public Furniture[] furnitures = new Furniture[6];
 		public Door[] doors = new Door[4];
 
@@ -847,12 +843,14 @@ namespace SpyVsSpy
 		public Room(char color)
 		{
 			this.color = color;
+			occupiedBy = -1;
 			images.Add(new ImageContainer(RoomFilename(), new Point(0, 0), new Size(500, 200)));
 		}
 
 		// loads background, furniture and doors into image
-		public void LoadRoom(TransparentPanel frame)
+		public void LoadRoom(TransparentPanel frame, int player)
 		{
+			AddPlayer(player);
 			frame.images = images;
 			frame.Invalidate();
 		}
@@ -860,8 +858,6 @@ namespace SpyVsSpy
 		// sets room to default state
 		public void LeaveRoom(int player)
 		{
-			// reset position on screen to none
-			positionOnScreen = -1;
 			// sets player who is currently in the room
 			if (occupiedBy == 2)
 			{
@@ -870,6 +866,19 @@ namespace SpyVsSpy
 			else
 			{
 				occupiedBy = -1;
+			}
+		}
+
+		// changes the occupiedBy variable depending on which player(s) are currently in the room
+		public void AddPlayer(int player)
+		{
+			if (occupiedBy != -1)
+			{
+				occupiedBy = 2;
+			}
+			else
+			{
+				occupiedBy = player;
 			}
 		}
 
