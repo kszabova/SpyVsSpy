@@ -73,18 +73,12 @@ namespace SpyVsSpy
 			rooms[players[player].panelOnScreen].LeaveRoom(player);
 			if (nextRoom.IsOccupied())
 			{
+				noRoom.LoadRoom(UI.roomPanels[players[player].panelOnScreen], player);
 				players[player].SwitchPanel();
 			}
 			else
 			{
-				if (players[player].panelOnScreen == 0)
-				{
-					nextRoom.LoadRoom(UI.roomPanels[0], player);
-				}
-				else
-				{
-					nextRoom.LoadRoom(UI.roomPanels[1], player);
-				}
+				nextRoom.LoadRoom(UI.roomPanels[player], player);
 				rooms[player] = nextRoom;
 			}
 		}
