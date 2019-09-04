@@ -37,26 +37,26 @@ namespace SpyVsSpy
 
 					// examining furniture and opening doors
 					case 'X':
-						int closeFurniture = rooms[0].FurnitureNearby(players[0].playerPosition.floorCoordinates);
+						int closeFurniture = rooms[players[0].panelOnScreen].FurnitureNearby(players[0].playerPosition.floorCoordinates);
 						// player is standing in front of a furniture
 						if (closeFurniture != -1)
 						{
-							rooms[0].furnitures[closeFurniture].Lift(0);
+							rooms[players[0].panelOnScreen].furnitures[closeFurniture].Lift(0);
 							UI.Wait(500);
-							rooms[0].furnitures[closeFurniture].Release();
+							rooms[players[0].panelOnScreen].furnitures[closeFurniture].Release(0);
 						}
 						else
 						{
-							int closeDoors = rooms[0].DoorNearby(players[0].playerPosition.floorCoordinates);
+							int closeDoors = rooms[players[0].panelOnScreen].DoorNearby(players[0].playerPosition.floorCoordinates);
 							// player is standing in front of a door
 							if (closeDoors != -1)
 							{
-								rooms[0].doors[closeDoors].Switch();
+								rooms[players[0].panelOnScreen].doors[closeDoors].Switch(0);
 							}
 							// no furniture and no door => drop item in a random furniture in the room
 							else
 							{
-								int furniture = rooms[0].GetRandomFurniture();
+								int furniture = rooms[players[0].panelOnScreen].GetRandomFurniture();
 								players[0].DropItemToFurniture(furniture);
 							}
 						}
@@ -128,20 +128,17 @@ namespace SpyVsSpy
 			{
 				aliveImage = "playerWhite.png";
 				deadImage = "playerWhiteDead.png";
-				UpdatePlayerImageCoordinates();
-				playerPB = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
-				UI.roomPanels[0].BackColor = Color.Transparent;		// ?? why doesn't this work when it is in UI.LoadUI only?
-				DisplayPlayerInView();
 			}
 			else if (type == 1)
 			{
+				// TODO change these to computer pictures
 				aliveImage = "playerWhite.png";
 				deadImage = "playerWhiteDead.png";
-				UpdatePlayerImageCoordinates();
-				playerPB = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
-				UI.roomPanels[1].BackColor = Color.Transparent;
-				DisplayPlayerInView();
 			}
+			UpdatePlayerImageCoordinates();
+			playerPB = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
+			UI.roomPanels[type].BackColor = Color.Transparent;     // ?? why doesn't this work when it is in UI.LoadUI only?
+			DisplayPlayerInView();
 		}
 
 		// moves player in given direction and updates his position on the screen
@@ -257,7 +254,8 @@ namespace SpyVsSpy
 		public void DropItemToFurniture(int furniture)
 		{
 			int item = ItemInPosession();
-			Game.rooms[0].furnitures[furniture].item = item;
+			Game.rooms[panelOnScreen].furnitures[furniture].item = item;
+			Debug.WriteLine("Player dropped item into furniture in panel " + Convert.ToString(panelOnScreen));
 			// set all items to false; if player only had one item, it will get dropped; if they had a suitcase, they will lose all items
 			for (int i = 0; i < 4; ++i)
 			{
@@ -277,27 +275,13 @@ namespace SpyVsSpy
 		// displays player image in given part of the screen
 		void DisplayPlayerInView()
 		{
-			if (panelOnScreen == 0)
-			{
-				UI.roomPanels[0].Controls.Add(playerPB);
-			}
-			else
-			{
-				UI.roomPanels[1].Controls.Add(playerPB);
-			}
+			UI.roomPanels[panelOnScreen].Controls.Add(playerPB);
 		}
 
 		// removes player image from current panel
 		void RemovePlayerFromView()
 		{
-			if (panelOnScreen == 0)
-			{
-				UI.roomPanels[0].Controls.Remove(playerPB);
-			}
-			else
-			{
-				UI.roomPanels[1].Controls.Remove(playerPB);
-			}
+			UI.roomPanels[panelOnScreen].Controls.Remove(playerPB);
 		}
 
 		// updates the coordinates of playerImage when playerPosition changes
@@ -313,7 +297,7 @@ namespace SpyVsSpy
 		{
 			for (int i = 0; i < 4; ++i)
 			{
-				if (Game.rooms[0].doors[i] != null && Door.PositionInDoor(i, pos) && Game.rooms[0].doors[i].open)
+				if (Game.rooms[panelOnScreen].doors[i] != null && Door.PositionInDoor(i, pos) && Game.rooms[panelOnScreen].doors[i].open)
 				{
 					doorCrossed = i;
 				}
@@ -386,7 +370,8 @@ namespace SpyVsSpy
 		public void Lift(int player)
 		{
 			image.location = new Point(imagePosition.x, imagePosition.y - 15);
-			UI.UpdateObject(UI.roomPanels[0], image, 15);
+			UI.UpdateObject(UI.roomPanels[Game.players[player].panelOnScreen], image, 15);
+			Debug.WriteLine("Player is in panel " + Convert.ToString(Game.players[player].panelOnScreen));
 			// if furniture contained an item, pick it up
 			if (item != -1)
 			{
@@ -401,16 +386,16 @@ namespace SpyVsSpy
 		}
 
 		// puts the furniture back in its original position
-		public void Release()
+		public void Release(int player)
 		{
 			image.location = imagePosition.ToPoint();
-			UI.UpdateObject(UI.roomPanels[0], image, 15);
+			UI.UpdateObject(UI.roomPanels[Game.players[player].panelOnScreen], image, 15);
 		}
 		
 		// returns whether position is close to a specific type of furniture
-		public static bool PositionInRangeOfFurniture(int type, Coordinates position)
+		public static bool PositionInRangeOfFurniture(int furnitureType, Coordinates position)
 		{
-			switch (type)
+			switch (furnitureType)
 			{
 				case 0: return position.x < Coordinates.CalculateFloorLimit(position.y, 30, 'l') && position.y < 150;	// bookcase
 				case 1: return position.x > 130 && position.x < 250 && position.y > 100 && position.y < 120;			// desk
@@ -489,7 +474,7 @@ namespace SpyVsSpy
 		}
 
 		// closes the door if open and vice versa
-		public void Switch()
+		public void Switch(int player)
 		{
 			int oppositeDoor = GetCorrespondingDoor(location);
 			try			// remove
@@ -497,18 +482,18 @@ namespace SpyVsSpy
 				Room adjacentRoom = Game.levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
 				if (open)
 				{
-					Close();
-					adjacentRoom.doors[oppositeDoor].Close();
+					Close(player);
+					adjacentRoom.doors[oppositeDoor].Close(player);
 				}
 				else
 				{
-					Open();
-					adjacentRoom.doors[oppositeDoor].Open();
+					Open(player);
+					adjacentRoom.doors[oppositeDoor].Open(player);
 				}
 			}
 			catch		// remove
 			{
-				Game.players[0].Die();//remove
+				Game.players[player].Die();//remove
 			}	//remove
 		}
 
@@ -552,18 +537,18 @@ namespace SpyVsSpy
 		}
 
 		// switches the image to that of open door
-		void Open()
+		void Open(int player)
 		{
 			image.filename = openFileName;
-			UI.UpdateObject(UI.roomPanels[0], image, 0);
+			UI.UpdateObject(UI.roomPanels[Game.players[player].panelOnScreen], image, 0);
 			open = true;
 		}
 
 		// switches the image to closed
-		void Close()
+		void Close(int player)
 		{
 			image.filename = closedFileName;
-			UI.UpdateObject(UI.roomPanels[0], image, 0);
+			UI.UpdateObject(UI.roomPanels[Game.players[player].panelOnScreen], image, 0);
 			open = false;
 		}
 
@@ -619,6 +604,7 @@ namespace SpyVsSpy
 	// takes care mostly of trapulator images; most item logic is part of Player and Furniture class
 	public class Item
 	{
+		// TODO change this for computer as well
 		static TransparentPanel[] itemsUp = new TransparentPanel[4];
 
 		static string placeholderImage = "placeholderItem.png";
@@ -636,21 +622,15 @@ namespace SpyVsSpy
 		// displays item's image on trapulator
 		public static void ShowOnTrapulator(int item, int player)
 		{
-			if (player == 0)
-			{
-				UI.sidePanels[0].images[item].filename = GetFilename(item);
-				UI.UpdateObject(UI.sidePanels[0], UI.sidePanels[0].images[item], 0);
-			}
+			UI.sidePanels[player].images[item].filename = GetFilename(item);
+			UI.UpdateObject(UI.sidePanels[player], UI.sidePanels[player].images[item], 0);
 		}
 
 		// hides image from trapulator
 		public static void HideFromTrapulator(int item, int player)
 		{
-			if (player == 0)
-			{
-				UI.sidePanels[0].images[item].filename = placeholderImage;
-				UI.UpdateObject(UI.sidePanels[0], UI.sidePanels[0].images[item], 0);
-			}
+			UI.sidePanels[player].images[item].filename = placeholderImage;
+			UI.UpdateObject(UI.sidePanels[player], UI.sidePanels[player].images[item], 0);
 		}
 
 		// returns filename of image of given item
