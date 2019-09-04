@@ -68,16 +68,44 @@ namespace SpyVsSpy
 		// loads next room given door in current room
 		public static void LoadRoomByDoor(int door, int player)
 		{
-			Triplet leadsTo = rooms[player].doors[door].leadsTo;
+			Room currentRoom = rooms[players[player].panelOnScreen];
+			Triplet leadsTo = currentRoom.doors[door].leadsTo;
 			Room nextRoom = levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
-			rooms[players[player].panelOnScreen].LeaveRoom(player);
-			if (nextRoom.IsOccupied())
+			
+			// both players are in the current room => both new rooms are drawn into their respective default place
+			if (currentRoom.occupiedBy == 2)
 			{
+				// update player's panel to default
+				players[player].panelOnScreen = player;
+				int otherPlayer = player == 0 ? 1 : 0;
+				players[otherPlayer].panelOnScreen = otherPlayer;
+
+				// update room panels
+				currentRoom.occupiedBy = -1;
+				nextRoom.occupiedBy = -1;
+				currentRoom.LoadRoom(UI.roomPanels[otherPlayer], otherPlayer);
+				nextRoom.LoadRoom(UI.roomPanels[player], otherPlayer);
+				rooms[otherPlayer] = currentRoom;
+				rooms[player] = nextRoom;
+
+				// redraw players into their respective panels
+				UI.RemovePlayerFromCurrentView(player);
+				UI.RemovePlayerFromCurrentView(otherPlayer);
+				players[player].DisplayPlayerInView();
+				players[otherPlayer].DisplayPlayerInView();
+			}
+			// if player is entering a room that is already occupied, his panel gets white and the player is drawn into the other panel
+			else if (nextRoom.occupiedBy != -1)
+			{
+				currentRoom.LeaveRoom(player);
 				noRoom.LoadRoom(UI.roomPanels[players[player].panelOnScreen], player);
+				UI.RemovePlayerFromCurrentView(player);
 				players[player].SwitchPanel();
+				rooms[players[player].panelOnScreen].AddPlayer(player);
 			}
 			else
 			{
+				currentRoom.LeaveRoom(player);
 				nextRoom.LoadRoom(UI.roomPanels[player], player);
 				rooms[player] = nextRoom;
 			}
@@ -273,7 +301,7 @@ namespace SpyVsSpy
 		}
 
 		// displays player image in given part of the screen
-		void DisplayPlayerInView()
+		public void DisplayPlayerInView()
 		{
 			UI.roomPanels[panelOnScreen].Controls.Add(playerPB);
 		}
@@ -804,8 +832,8 @@ namespace SpyVsSpy
 	// keeps track of furniture, doors, traps and objects in the room
 	public class Room
 	{
-		char color;
-		int occupiedBy;		// indicates which player is currently in the room, -1 if none, 2 if both
+		public char color;
+		public int occupiedBy;		// indicates which player is currently in the room, -1 if none, 2 if both
 		public Furniture[] furnitures = new Furniture[6];
 		public Door[] doors = new Door[4];
 
@@ -825,6 +853,10 @@ namespace SpyVsSpy
 		public void LoadRoom(TransparentPanel frame, int player)
 		{
 			AddPlayer(player);
+			if (color == 'X')
+			{
+				occupiedBy = -1;
+			}
 			frame.images = images;
 			frame.Invalidate();
 		}
@@ -915,12 +947,6 @@ namespace SpyVsSpy
 			Random random = new Random();
 			int index = random.Next(furnituresPresent.Count);
 			return furnituresPresent[index];
-		}
-
-		// returns true if no player is in the room
-		public bool IsOccupied()
-		{
-			return occupiedBy != -1;
 		}
 
 		// returns the filename of background image depending on the color of room
@@ -1108,6 +1134,12 @@ namespace SpyVsSpy
 		{
 			Rectangle areaToUpdate = GetRectangleWithMargin(Game.players[player].image.location, Game.players[player].image.size, 5);
 			panel.Invalidate(areaToUpdate);
+		}
+
+		// removes player's PictureBox from his current view
+		public static void RemovePlayerFromCurrentView(int player)
+		{
+			roomPanels[Game.players[player].panelOnScreen].Controls.Remove(Game.players[player].playerPB);
 		}
 
 		// makes panel visible if visibility==true, otherwise makes it invisible
