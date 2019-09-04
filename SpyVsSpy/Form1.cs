@@ -79,11 +79,11 @@ namespace SpyVsSpy
 			{
 				if (players[player].panelOnScreen == 0)
 				{
-					nextRoom.LoadRoom(UI.roomViewUp, player);
+					nextRoom.LoadRoom(UI.roomPanels[0], player);
 				}
 				else
 				{
-					nextRoom.LoadRoom(UI.roomViewDown, player);
+					nextRoom.LoadRoom(UI.roomPanels[1], player);
 				}
 				rooms[player] = nextRoom;
 			}
@@ -101,8 +101,8 @@ namespace SpyVsSpy
 			rooms[1] = levelMap[computerFirstRoom.x, computerFirstRoom.y, computerFirstRoom.z];
 			players[0] = new Player(0);
 			players[1] = new Player(1);
-			rooms[0].LoadRoom(UI.roomViewUp, 0);
-			rooms[1].LoadRoom(UI.roomViewDown, 1);
+			rooms[0].LoadRoom(UI.roomPanels[0], 0);
+			rooms[1].LoadRoom(UI.roomPanels[1], 1);
 			UI.Countdown();
 		}
 	}
@@ -136,7 +136,7 @@ namespace SpyVsSpy
 				deadImage = "playerWhiteDead.png";
 				UpdatePlayerImageCoordinates();
 				playerPB = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
-				UI.roomViewUp.BackColor = Color.Transparent;		// ?? why doesn't this work when it is in UI.LoadUI only?
+				UI.roomPanels[0].BackColor = Color.Transparent;		// ?? why doesn't this work when it is in UI.LoadUI only?
 				DisplayPlayerInView();
 			}
 			else if (type == 1)
@@ -145,7 +145,7 @@ namespace SpyVsSpy
 				deadImage = "playerWhiteDead.png";
 				UpdatePlayerImageCoordinates();
 				playerPB = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
-				UI.roomViewDown.BackColor = Color.Transparent;
+				UI.roomPanels[1].BackColor = Color.Transparent;
 				DisplayPlayerInView();
 			}
 		}
@@ -285,11 +285,11 @@ namespace SpyVsSpy
 		{
 			if (panelOnScreen == 0)
 			{
-				UI.roomViewUp.Controls.Add(playerPB);
+				UI.roomPanels[0].Controls.Add(playerPB);
 			}
 			else
 			{
-				UI.roomViewDown.Controls.Add(playerPB);
+				UI.roomPanels[1].Controls.Add(playerPB);
 			}
 		}
 
@@ -298,11 +298,11 @@ namespace SpyVsSpy
 		{
 			if (panelOnScreen == 0)
 			{
-				UI.roomViewUp.Controls.Remove(playerPB);
+				UI.roomPanels[0].Controls.Remove(playerPB);
 			}
 			else
 			{
-				UI.roomViewDown.Controls.Remove(playerPB);
+				UI.roomPanels[1].Controls.Remove(playerPB);
 			}
 		}
 
@@ -392,7 +392,7 @@ namespace SpyVsSpy
 		public void Lift(int player)
 		{
 			image.location = new Point(imagePosition.x, imagePosition.y - 15);
-			UI.UpdateObject(UI.roomViewUp, image, 15);
+			UI.UpdateObject(UI.roomPanels[0], image, 15);
 			// if furniture contained an item, pick it up
 			if (item != -1)
 			{
@@ -410,7 +410,7 @@ namespace SpyVsSpy
 		public void Release()
 		{
 			image.location = imagePosition.ToPoint();
-			UI.UpdateObject(UI.roomViewUp, image, 15);
+			UI.UpdateObject(UI.roomPanels[0], image, 15);
 		}
 		
 		// returns whether position is close to a specific type of furniture
@@ -561,7 +561,7 @@ namespace SpyVsSpy
 		void Open()
 		{
 			image.filename = openFileName;
-			UI.UpdateObject(UI.roomViewUp, image, 0);
+			UI.UpdateObject(UI.roomPanels[0], image, 0);
 			open = true;
 		}
 
@@ -569,7 +569,7 @@ namespace SpyVsSpy
 		void Close()
 		{
 			image.filename = closedFileName;
-			UI.UpdateObject(UI.roomViewUp, image, 0);
+			UI.UpdateObject(UI.roomPanels[0], image, 0);
 			open = false;
 		}
 
@@ -635,7 +635,7 @@ namespace SpyVsSpy
 		{
 			for (int i = 0; i < 4; ++i)
 			{
-				UI.sidePanelUp.images.Add(new ImageContainer(placeholderImage, CalculatePositionOnTrapulator(i).ToPoint(), imageSize));
+				UI.sidePanels[0].images.Add(new ImageContainer(placeholderImage, CalculatePositionOnTrapulator(i).ToPoint(), imageSize));
 			}
 		}
 
@@ -644,8 +644,8 @@ namespace SpyVsSpy
 		{
 			if (player == 0)
 			{
-				UI.sidePanelUp.images[item].filename = GetFilename(item);
-				UI.UpdateObject(UI.sidePanelUp, UI.sidePanelUp.images[item], 0);
+				UI.sidePanels[0].images[item].filename = GetFilename(item);
+				UI.UpdateObject(UI.sidePanels[0], UI.sidePanels[0].images[item], 0);
 			}
 		}
 
@@ -654,8 +654,8 @@ namespace SpyVsSpy
 		{
 			if (player == 0)
 			{
-				UI.sidePanelUp.images[item].filename = placeholderImage;
-				UI.UpdateObject(UI.sidePanelUp, UI.sidePanelUp.images[item], 0);
+				UI.sidePanels[0].images[item].filename = placeholderImage;
+				UI.UpdateObject(UI.sidePanels[0], UI.sidePanels[0].images[item], 0);
 			}
 		}
 
@@ -981,14 +981,11 @@ namespace SpyVsSpy
 
 		public static string baseImageAddress = "../../Assets/Images/";
 		static string baseMapAddress = "../../Assets/LevelMaps/";
-		
+
 		// fundamental parts of the UI
-		public static TransparentPanel roomViewUp;
-		public static TransparentPanel roomViewDown;
-		public static TransparentPanel sidePanelUp;
-		public static TransparentPanel sidePanelDown;
-		public static TextPanel countdownUp;
-		public static TextPanel countdownDown;
+		public static TransparentPanel[] roomPanels = new TransparentPanel[2];
+		public static TransparentPanel[] sidePanels = new TransparentPanel[2];
+		public static TextPanel[] countdowns = new TextPanel[2];
 
 		// stops the application for the given amount of miliseconds
 		public static void Wait(int miliseconds)
@@ -1121,7 +1118,7 @@ namespace SpyVsSpy
 			{
 				image.size = new Size(0, 0);
 			}
-			UpdatePlayerOnScreen(roomViewUp, 0);
+			UpdatePlayerOnScreen(roomPanels[0], 0);
 		}
 		
 		// redraws the area with furniture
@@ -1230,49 +1227,49 @@ namespace SpyVsSpy
 			int minutesHuman = Game.players[0].secondsLeft / 60;
 			int secondsHuman = Game.players[0].secondsLeft % 60;
 			string timeTextHuman = Convert.ToString(minutesHuman) + ":" + Convert.ToString(secondsHuman);
-			countdownUp.UpdateText(timeTextHuman);
+			countdowns[0].UpdateText(timeTextHuman);
 
 			int minutesComputer = Game.players[1].secondsLeft / 60;
 			int secondsComputer = Game.players[1].secondsLeft % 60;
 			string timeTextComputer = Convert.ToString(minutesComputer) + ":" + Convert.ToString(secondsComputer);
-			countdownDown.UpdateText(timeTextComputer);
+			countdowns[1].UpdateText(timeTextComputer);
 		}
 
 		// loads main parts of the UI
 		public static void LoadUI(Form1 form)
 		{
 			parentForm = form;
-			roomViewUp = new TransparentPanel();
-			roomViewUp.Location = new Point(20, 20);
-			roomViewUp.Size = new Size(500, 200);
-			parentForm.Controls.Add(roomViewUp);
-			roomViewUp.BackColor = Color.Transparent;
+			roomPanels[0] = new TransparentPanel();
+			roomPanels[0].Location = new Point(20, 20);
+			roomPanels[0].Size = new Size(500, 200);
+			parentForm.Controls.Add(roomPanels[0]);
+			roomPanels[0].BackColor = Color.Transparent;
 
-			sidePanelUp = new TransparentPanel();
-			sidePanelUp.Location = new Point(540, 20);
-			sidePanelUp.Size = new Size(200, 200);
-			parentForm.Controls.Add(sidePanelUp);
+			sidePanels[0] = new TransparentPanel();
+			sidePanels[0].Location = new Point(540, 20);
+			sidePanels[0].Size = new Size(200, 200);
+			parentForm.Controls.Add(sidePanels[0]);
 			
-			countdownUp = new TextPanel();
-			countdownUp.Location = new Point(0, 0);
-			countdownUp.Size = new Size(200, 100);
-			sidePanelUp.Controls.Add(countdownUp);
+			countdowns[0] = new TextPanel();
+			countdowns[0].Location = new Point(0, 0);
+			countdowns[0].Size = new Size(200, 100);
+			sidePanels[0].Controls.Add(countdowns[0]);
 
-			roomViewDown = new TransparentPanel();
-			roomViewDown.Location = new Point(20, 240);
-			roomViewDown.Size = new Size(500, 200);
-			parentForm.Controls.Add(roomViewDown);
-			roomViewDown.BackColor = Color.Transparent;
+			roomPanels[1] = new TransparentPanel();
+			roomPanels[1].Location = new Point(20, 240);
+			roomPanels[1].Size = new Size(500, 200);
+			parentForm.Controls.Add(roomPanels[1]);
+			roomPanels[1].BackColor = Color.Transparent;
 
-			sidePanelDown = new TransparentPanel();
-			sidePanelDown.Location = new Point(540, 240);
-			sidePanelDown.Size = new Size(200, 200);
-			parentForm.Controls.Add(sidePanelDown);
+			sidePanels[1] = new TransparentPanel();
+			sidePanels[1].Location = new Point(540, 240);
+			sidePanels[1].Size = new Size(200, 200);
+			parentForm.Controls.Add(sidePanels[1]);
 
-			countdownDown = new TextPanel();
-			countdownDown.Location = new Point(0, 0);
-			countdownDown.Size = new Size(200, 100);
-			sidePanelDown.Controls.Add(countdownDown);
+			countdowns[1] = new TextPanel();
+			countdowns[1].Location = new Point(0, 0);
+			countdowns[1].Size = new Size(200, 100);
+			sidePanels[1].Controls.Add(countdowns[1]);
 		}
 
 		// this causes buffer - find a better way?
@@ -1280,9 +1277,9 @@ namespace SpyVsSpy
 		{
 			TransparentPanel roomView;
 			if (frame == 'u')
-				roomView = roomViewUp;
+				roomView = roomPanels[0];
 			else
-				roomView = roomViewDown;
+				roomView = roomPanels[1];
 			
 			roomView.Invalidate(GetRectangleWithMargin(Game.players[0].playerImage.Location, Game.players[0].playerImage.Size, 5));
 			Game.players[0].playerImage.Invalidate();
