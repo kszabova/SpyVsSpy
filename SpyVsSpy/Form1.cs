@@ -15,12 +15,15 @@ namespace SpyVsSpy
 	// control of the game
 	public class Game
 	{
-		public static Room[,,] levelMap;		// contains plan of current level
+		// contains plan of current level
+		public static Room[,,] levelMap;		
 
+		// basic components of the game
 		public static Player[] players = new Player[2];
 		public static Room[] rooms = new Room[2];
-
-		static Room noRoom = new Room('X');		// placeholder object for when no room should be drawn into panel
+		
+		// placeholder object for when no room should be drawn into panel
+		static Room noRoom = new Room('X');		
 
 		// handles events when key is pressed
 		public static void EventOnKeyPress(char key)
@@ -186,21 +189,29 @@ namespace SpyVsSpy
 	// player functionality
 	public class Player
 	{
+		// basic characteristics of player
+		int type;		// 0 for human, 1 for computer
 		public int state;   // 0 - default, 1 - on trapulator, 2 - holding a trap
+		public bool alive = true;
+
+		// visible part of player
+		public PictureBox playerImage;
+		public Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 141));
+		Coordinates playerImageCoordinates = new Coordinates(0, 0);
+		public Size imageSize = new Size(40, 40);
+		public int panelOnScreen;
+
+		// traps
 		public int trap;    // 1 - time bomb, 2 - water bucket, 3 - bomb, -1 - none
 		public int disarm;	// 2 - umbrella, 3 - shield, -1 - none
-		public int panelOnScreen;
-		public Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 141));
-		public TransparentPanel playerImage;
-		public Size imageSize = new Size(40, 40);
-		Coordinates playerImageCoordinates = new Coordinates(0, 0);
-		public ImageContainer image;
-		public bool alive = true;
-		public int secondsLeft = 120;
-		public PictureBox playerPB;
 
-		int type;		// 0 for human, 1 for computer
+		// timer
+		public int secondsLeft = 120;
+
+		// posessions
 		bool[] items = new bool[5];     // 0-passport, 1-key, 2-money, 3-secret plans, 4-suitcase
+
+		// for internal use
 		string aliveImage;
 		string deadImage;
 
@@ -223,7 +234,7 @@ namespace SpyVsSpy
 				deadImage = "playerWhiteDead.png";
 			}
 			UpdatePlayerImageCoordinates();
-			playerPB = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
+			playerImage = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
 			UI.roomPanels[type].BackColor = Color.Transparent;     // ?? why doesn't this work when it is in UI.LoadUI only?
 			DisplayPlayerInView();
 		}
@@ -250,7 +261,7 @@ namespace SpyVsSpy
 			{
 				playerPosition.floorCoordinates = newCoords;
 				UpdatePlayerImageCoordinates();
-				UI.ChangePictureBoxLocation(playerPB, playerImageCoordinates);
+				UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);
 			}
 
 			// if player is crossing a door, loads the new room
@@ -268,7 +279,7 @@ namespace SpyVsSpy
 				Coordinates newPosition = CalculatePositionAfterCrossingDoor(doorCrossed, playerPosition.floorCoordinates);
 				playerPosition.floorCoordinates = newPosition;
 				UpdatePlayerImageCoordinates();                                     // v
-				UI.ChangePictureBoxLocation(playerPB, playerImageCoordinates);   // make these two lines into a new function (Refresh?)
+				UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);   // make these two lines into a new function (Refresh?)
 				
 				// load new room
 				try
@@ -288,13 +299,13 @@ namespace SpyVsSpy
 			alive = false;
 			disarm = -1;
 			secondsLeft -= 15;
-			UI.ChangeImageInPictureBox(playerPB, deadImage);
-			UI.FadeAway(playerPB);
+			UI.ChangeImageInPictureBox(playerImage, deadImage);
+			UI.FadeAway(playerImage);
 			// after a while, player appears at the same place where he died
 			UI.Wait(3000);
-			UI.ChangeImageInPictureBox(playerPB, aliveImage);
-			UI.ChangePictureBoxLocation(playerPB, playerImageCoordinates);
-			UI.ChangePictureBoxVisibility(playerPB, true);
+			UI.ChangeImageInPictureBox(playerImage, aliveImage);
+			UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);
+			UI.ChangePictureBoxVisibility(playerImage, true);
 			alive = true;
 		}
 
@@ -397,13 +408,13 @@ namespace SpyVsSpy
 		// displays player image in given part of the screen
 		public void DisplayPlayerInView()
 		{
-			UI.roomPanels[panelOnScreen].Controls.Add(playerPB);
+			UI.roomPanels[panelOnScreen].Controls.Add(playerImage);
 		}
 
 		// removes player image from current panel
 		void RemovePlayerFromView()
 		{
-			UI.roomPanels[panelOnScreen].Controls.Remove(playerPB);
+			UI.roomPanels[panelOnScreen].Controls.Remove(playerImage);
 		}
 
 		// updates the coordinates of playerImage when playerPosition changes
@@ -468,16 +479,173 @@ namespace SpyVsSpy
 		}
 	}
 
+	// keeps track of furniture, doors, traps and objects in the room
+	public class Room
+	{
+		// basic features
+		public char color;
+		public int occupiedBy;		// indicates which player is currently in the room, -1 if none, 2 if both
+		public Furniture[] furnitures = new Furniture[8];
+		public Door[] doors = new Door[4];
+
+		public List<int> furnituresPresent = new List<int> { };     // list of all pieces of furniture by number present in the room
+		public List<int> doorsPresent = new List<int> { };
+
+		// used for displaying on screen
+		public List<ImageContainer> images = new List<ImageContainer> { };
+
+		public Room(char color)
+		{
+			this.color = color;
+			occupiedBy = -1;
+			images.Add(new ImageContainer(RoomFilename(), new Point(0, 0), new Size(500, 200)));
+		}
+
+		// loads background, furniture and doors into image
+		public void LoadRoom(TransparentPanel frame, int player)
+		{
+			AddPlayer(player);
+			if (color == 'X')
+			{
+				occupiedBy = -1;
+			}
+			frame.images = images;
+			frame.Invalidate();
+		}
+
+		// sets room to default state
+		public void LeaveRoom(int player)
+		{
+			// sets player who is currently in the room
+			if (occupiedBy == 2)
+			{
+				occupiedBy = (-1 + player) * -1;		// result will be opposite of player = the player who didn't leave stays
+			}
+			else
+			{
+				occupiedBy = -1;
+			}
+		}
+
+		// changes the occupiedBy variable depending on which player(s) are currently in the room
+		public void AddPlayer(int player)
+		{
+			if (occupiedBy != -1)
+			{
+				occupiedBy = 2;
+			}
+			else
+			{
+				occupiedBy = player;
+			}
+		}
+
+		// returns the number of furniture next to which the player is standing, -1 if none
+		public int FurnitureNearby(Coordinates playerPosition)
+		{
+			for (int i = 0; i < 8; ++i)
+			{
+				if (furnitures[i] != null && Furniture.PositionInRangeOfFurniture(i, playerPosition))
+				{
+					return i;
+				}
+			}
+			return -1;
+		}
+
+		// returns the number of door in front of which the player is standing, -1 if none
+		public int DoorNearby(Coordinates playerPosition)
+		{
+			for (int i = 0; i < 4; ++i)
+			{
+				if (doors[i] != null && Door.PositionInRangeOfDoor(i, playerPosition))
+				{
+					return i;
+				}
+			}
+			return -1;
+		}
+
+		// adds a piece of furniture to room
+		public void AddFurniture(int type, int item)
+		{
+			// we don't want to add coat rack or first aid kit to the list
+			if (type < 6)
+			{
+				furnituresPresent.Add(type);
+			}
+
+			// item values larger than 3 mean it is suitcase with something inside
+			if (item > 3)
+			{
+				Suitcase.AddItem(item % 4);
+				// the furniture wil seemingly contain suitcase only
+				furnitures[type] = new Furniture(type, 4);
+			}
+			// otherwise it contains at most one item
+			else
+			{
+				furnitures[type] = new Furniture(type, item);
+			}
+			images.Add(furnitures[type].image);
+		}
+
+		// adds a door to room
+		public void AddDoor(int i, Triplet leadsTo)
+		{
+			doorsPresent.Add(i);
+			doors[i] = new Door(i, leadsTo);
+			images.Add(doors[i].image);
+		}
+
+		// returns the number of a random furniture in the room
+		public int GetRandomFurniture()
+		{
+			Random random = new Random();
+			int index = random.Next(furnituresPresent.Count);
+			return furnituresPresent[index];
+		}
+
+		// starts countdown for time bomb and kills everyone who is in the room when it runs out
+		public void ActivateTimeBomb()
+		{
+			UI.Wait(10000);
+			if (occupiedBy != -1)
+			{
+				if (occupiedBy == 2)
+				{
+					Trap.Activate(0, 1);
+					Trap.Activate(1, 1);
+				}
+				else
+				{
+					Trap.Activate(occupiedBy, 1);
+				}
+			}
+		}
+
+		// returns the filename of background image depending on the color of room
+		string RoomFilename()
+		{
+			return "room" + color + ".png";
+		}
+	}
+
 	// handles furniture behavior
 	public class Furniture
 	{
+		// basic characteristics
 		public int type;    // from left (0) to right (5): bookcase, table, small shelf, shelf, microwave, drawer; 6 - coat rack, 7 - first aid kit
 		public int item;
+		public bool trap = false;
+
+		// visible parts of the furniture
+		public ImageContainer image;
 		public Size imageSize;
 		public Coordinates imagePosition;
-		public ImageContainer image;
+
+		// for displaying the picture
 		string filename;
-		public bool trap = false;
 
 		public Furniture(int type, int item)
 		{
@@ -608,15 +776,19 @@ namespace SpyVsSpy
 	// handles door behavior
 	public class Door
 	{
+		// basic characteristics
 		int location;	// possible values 0-3, in the middle of each wall
-		public Triplet leadsTo;
 		public bool open;
-		string openFileName;
-		string closedFileName;
+		public Triplet leadsTo;
+		public bool trap = false;
+
+		// visible parts
+		public ImageContainer image;
 		public Size imageSize;
 		public Coordinates imagePosition;
-		public ImageContainer image;
-		public bool trap = false;
+
+		string openFileName;
+		string closedFileName;
 
 		public Door(int location, Triplet leadsTo)
 		{
@@ -960,156 +1132,6 @@ namespace SpyVsSpy
 		}
 	}
 
-	// keeps track of furniture, doors, traps and objects in the room
-	public class Room
-	{
-		public char color;
-		public int occupiedBy;		// indicates which player is currently in the room, -1 if none, 2 if both
-		public Furniture[] furnitures = new Furniture[8];
-		public Door[] doors = new Door[4];
-
-		public List<int> furnituresPresent = new List<int> { };     // list of all pieces of furniture by number present in the room
-		public List<int> doorsPresent = new List<int> { };
-
-		public List<ImageContainer> images = new List<ImageContainer> { };
-
-		public Room(char color)
-		{
-			this.color = color;
-			occupiedBy = -1;
-			images.Add(new ImageContainer(RoomFilename(), new Point(0, 0), new Size(500, 200)));
-		}
-
-		// loads background, furniture and doors into image
-		public void LoadRoom(TransparentPanel frame, int player)
-		{
-			AddPlayer(player);
-			if (color == 'X')
-			{
-				occupiedBy = -1;
-			}
-			frame.images = images;
-			frame.Invalidate();
-		}
-
-		// sets room to default state
-		public void LeaveRoom(int player)
-		{
-			// sets player who is currently in the room
-			if (occupiedBy == 2)
-			{
-				occupiedBy = (-1 + player) * -1;		// result will be opposite of player = the player who didn't leave stays
-			}
-			else
-			{
-				occupiedBy = -1;
-			}
-		}
-
-		// changes the occupiedBy variable depending on which player(s) are currently in the room
-		public void AddPlayer(int player)
-		{
-			if (occupiedBy != -1)
-			{
-				occupiedBy = 2;
-			}
-			else
-			{
-				occupiedBy = player;
-			}
-		}
-
-		// returns the number of furniture next to which the player is standing, -1 if none
-		public int FurnitureNearby(Coordinates playerPosition)
-		{
-			for (int i = 0; i < 8; ++i)
-			{
-				if (furnitures[i] != null && Furniture.PositionInRangeOfFurniture(i, playerPosition))
-				{
-					return i;
-				}
-			}
-			return -1;
-		}
-
-		// returns the number of door in front of which the player is standing, -1 if none
-		public int DoorNearby(Coordinates playerPosition)
-		{
-			for (int i = 0; i < 4; ++i)
-			{
-				if (doors[i] != null && Door.PositionInRangeOfDoor(i, playerPosition))
-				{
-					return i;
-				}
-			}
-			return -1;
-		}
-
-		// adds a piece of furniture to room
-		public void AddFurniture(int type, int item)
-		{
-			// we don't want to add coat rack or first aid kit to the list
-			if (type < 6)
-			{
-				furnituresPresent.Add(type);
-			}
-
-			// item values larger than 3 mean it is suitcase with something inside
-			if (item > 3)
-			{
-				Suitcase.AddItem(item % 4);
-				// the furniture wil seemingly contain suitcase only
-				furnitures[type] = new Furniture(type, 4);
-			}
-			// otherwise it contains at most one item
-			else
-			{
-				furnitures[type] = new Furniture(type, item);
-			}
-			images.Add(furnitures[type].image);
-		}
-
-		// adds a door to room
-		public void AddDoor(int i, Triplet leadsTo)
-		{
-			doorsPresent.Add(i);
-			doors[i] = new Door(i, leadsTo);
-			images.Add(doors[i].image);
-		}
-
-		// returns the number of a random furniture in the room
-		public int GetRandomFurniture()
-		{
-			Random random = new Random();
-			int index = random.Next(furnituresPresent.Count);
-			return furnituresPresent[index];
-		}
-
-		// starts countdown for time bomb and kills everyone who is in the room when it runs out
-		public void ActivateTimeBomb()
-		{
-			UI.Wait(10000);
-			if (occupiedBy != -1)
-			{
-				if (occupiedBy == 2)
-				{
-					Trap.Activate(0, 1);
-					Trap.Activate(1, 1);
-				}
-				else
-				{
-					Trap.Activate(occupiedBy, 1);
-				}
-			}
-		}
-
-		// returns the filename of background image depending on the color of room
-		string RoomFilename()
-		{
-			return "room" + color + ".png";
-		}
-	}
-
 	public class ComputerAI
 	{
 		static Player computer;
@@ -1131,6 +1153,7 @@ namespace SpyVsSpy
 	// UI functionality
 	public class UI
 	{
+		// form where all the graphics is displayed
 		public static Form1 parentForm;
 
 		public static string baseImageAddress = "../../Assets/Images/";
@@ -1260,20 +1283,6 @@ namespace SpyVsSpy
 		{
 			image.location = newPosition;
 		}
-
-		// makes player visible or invisible
-		public static void ChangePlayerVisibility(ImageContainer image, bool visibility)
-		{
-			if (visibility)
-			{
-				image.size = Game.players[0].imageSize;
-			}
-			else
-			{
-				image.size = new Size(0, 0);
-			}
-			UpdatePlayerOnScreen(roomPanels[0], 0);
-		}
 		
 		// redraws the area with furniture
 		public static void UpdateObject(TransparentPanel panel, ImageContainer image, int margin)
@@ -1281,19 +1290,6 @@ namespace SpyVsSpy
 			Rectangle areaToUpdate = GetRectangleWithMargin(image.location, image.size, margin);
 			panel.Invalidate(areaToUpdate);
 			//UpdatePlayerOnScreen(panel, 0);
-		}
-
-		// redraws player
-		public static void UpdatePlayerOnScreen(TransparentPanel panel, int player)
-		{
-			Rectangle areaToUpdate = GetRectangleWithMargin(Game.players[player].image.location, Game.players[player].image.size, 5);
-			panel.Invalidate(areaToUpdate);
-		}
-
-		// removes player's PictureBox from his current view
-		public static void RemovePlayerFromCurrentView(int player)
-		{
-			roomPanels[Game.players[player].panelOnScreen].Controls.Remove(Game.players[player].playerPB);
 		}
 
 		// makes panel visible if visibility==true, otherwise makes it invisible
@@ -1307,6 +1303,12 @@ namespace SpyVsSpy
 			{
 				panel.Visible = false;
 			}
+		}
+
+		// removes player from panel
+		public static void RemovePlayerFromCurrentView(int player)
+		{
+			roomPanels[Game.players[player].panelOnScreen].Controls.Remove(Game.players[player].playerImage);
 		}
 
 		// incrementally puts image higher and higher until it eventually disappears
