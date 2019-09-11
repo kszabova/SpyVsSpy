@@ -425,12 +425,12 @@ namespace SpyVsSpy
 		{
 			switch (furnitureType)
 			{
-				case 0: return position.x < Coordinates.CalculateFloorLimit(position.y, 30, 'l') && position.y < 150;	// bookcase
+				case 0: return position.x < Coordinates.CalculateFloorLimit(position.y, 40, 'l') && position.y < 150;	// bookcase
 				case 1: return position.x > 130 && position.x < 250 && position.y > 100 && position.y < 120;			// desk
 				case 2: return position.x > 150 && position.x < 200 && position.y > 100 && position.y < 120;			// coat rack
 				case 3: return position.x > 250 && position.x < 320 && position.y > 100 && position.y < 120;			// shelf
 				case 4: return position.x > 285 && position.x < 365 && position.y > 100 && position.y < 120;			// microwave
-				case 5: return position.x > Coordinates.CalculateFloorLimit(position.y, 30, 'r') && position.y < 140;	// drawer
+				case 5: return position.x > Coordinates.CalculateFloorLimit(position.y, 40, 'r') && position.y < 140;	// drawer
 				default: return false;
 			}
 		}
@@ -530,9 +530,9 @@ namespace SpyVsSpy
 		{
 			switch (location)
 			{
-				case 0: return position.x <= Coordinates.CalculateFloorLimit(position.y, 10, 'l') && position.y >= 150 && position.y <= 180;	// left wall
+				case 0: return position.x <= Coordinates.CalculateFloorLimit(position.y, 20, 'l') && position.y >= 150 && position.y <= 180;	// left wall
 				case 1: return position.x >= 220 && position.x <= 280 && position.y >= 100 && position.y <= 110;								// back wall
-				case 2: return position.x >= Coordinates.CalculateFloorLimit(position.y, 10, 'r') && position.y >= 150 && position.y <= 180;	// right wall
+				case 2: return position.x >= Coordinates.CalculateFloorLimit(position.y, 20, 'r') && position.y >= 150 && position.y <= 180;	// right wall
 				case 3: return position.x >= 210 && position.x <= 290 && position.y >= 190 && position.y <= 200;								// front (invisible) wall
 				default: return false;
 			}
