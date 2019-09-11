@@ -517,7 +517,7 @@ namespace SpyVsSpy
 			{
 				case 0: imagePosition = new Coordinates(50, 30); break;		// bookcase
 				case 1: imagePosition = new Coordinates(130, 50); break;	// desk
-				case 2: imagePosition = new Coordinates(150, 40); break;	// coat rack
+				case 2: imagePosition = new Coordinates(150, 60); break;	// small shelf
 				case 3: imagePosition = new Coordinates(250, 60); break;	// shelf
 				case 4: imagePosition = new Coordinates(285, 60); break;	// microwave
 				case 5: imagePosition = new Coordinates(380, 30); break;	// drawer
@@ -531,7 +531,7 @@ namespace SpyVsSpy
 			{
 				case 0: imageSize = new Size(70, 120); break;
 				case 1: imageSize = new Size(120, 60); break;
-				case 2: imageSize = new Size(50, 70); break;
+				case 2: imageSize = new Size(50, 50); break;
 				case 3: imageSize = new Size(70, 50); break;
 				case 4: imageSize = new Size(80, 50); break;
 				case 5: imageSize = new Size(60, 110); break;
@@ -546,7 +546,7 @@ namespace SpyVsSpy
 			{
 				case 0: filename = "bookcase.png"; break;
 				case 1: filename = "desk.png"; break;
-				case 2: filename = "coatrack.png"; break;
+				case 2: filename = "smallshelf.png"; break;
 				case 3: filename = "shelf.png"; break;
 				case 4: filename = "microwave.png"; break;
 				case 5: filename = "drawer.png"; break;	// TEMPORARY
