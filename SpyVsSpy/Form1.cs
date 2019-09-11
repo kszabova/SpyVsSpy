@@ -286,6 +286,7 @@ namespace SpyVsSpy
 		public void Die()
 		{
 			alive = false;
+			disarm = -1;
 			secondsLeft -= 15;
 			UI.ChangeImageInPictureBox(playerPB, deadImage);
 			UI.FadeAway(playerPB);
@@ -353,7 +354,7 @@ namespace SpyVsSpy
 		{
 			int item = ItemInPosession();
 			Game.rooms[panelOnScreen].furnitures[furniture].item = item;
-			Debug.WriteLine("Player dropped item into furniture in panel " + Convert.ToString(panelOnScreen));
+			Debug.WriteLine("Player dropped item " + item + " into furniture " + Convert.ToString(furniture));
 			// set all items to false; if player only had one item, it will get dropped; if they had a suitcase, they will lose all items
 			for (int i = 0; i < 4; ++i)
 			{
@@ -368,7 +369,10 @@ namespace SpyVsSpy
 		{
 			// throw away all items
 			int randFurniture = Game.rooms[panelOnScreen].GetRandomFurniture();
-			DropItemToFurniture(randFurniture);
+			if (ItemInPosession() != -1)
+			{
+				DropItemToFurniture(randFurniture);
+			}
 
 			// take the disarm
 			if (furniture == 6)
@@ -381,7 +385,6 @@ namespace SpyVsSpy
 				// shield in a first aid kit
 				disarm = 3;
 			}
-			Debug.WriteLine("Player has disarm " + disarm);
 		}
 
 		// changes where player should be drawn
@@ -489,6 +492,7 @@ namespace SpyVsSpy
 		// puts the furniture higher in the air
 		public void Lift(int player)
 		{
+			Debug.WriteLine("Player has disarm " + Game.players[player].disarm);
 			image.location = new Point(imagePosition.x, imagePosition.y - 15);
 			UI.UpdateObject(UI.roomPanels[Game.players[player].panelOnScreen], image, 15);
 
@@ -503,6 +507,7 @@ namespace SpyVsSpy
 			if (type == 6 || type == 7)
 			{
 				Game.players[player].PickUpDisarm(type);
+				return;
 			}
 
 			// if furniture contained an item, pick it up
@@ -514,7 +519,15 @@ namespace SpyVsSpy
 			// otherwise put any object player is carrying inside that furniture
 			else
 			{
-				Game.players[player].DropItemToFurniture(type);
+				// we can't put it into a coat rack or first aid kit
+				if (type != 6 && type != 7)
+				{
+					Game.players[player].DropItemToFurniture(type);
+				}
+				else
+				{
+					Game.players[player].DropItemToFurniture(Game.rooms[Game.players[player].panelOnScreen].GetRandomFurniture());
+				}
 			}
 		}
 
@@ -848,6 +861,7 @@ namespace SpyVsSpy
 		// activate and kill player
 		public static void Activate(int player, int trapType)
 		{
+			Debug.WriteLine("player has disarm " + Game.players[player].disarm);
 			if (Game.players[player].disarm != trapType)
 			{
 				Game.players[player].Die();
@@ -1034,7 +1048,12 @@ namespace SpyVsSpy
 		// adds a piece of furniture to room
 		public void AddFurniture(int type, int item)
 		{
-			furnituresPresent.Add(type);
+			// we don't want to add coat rack or first aid kit to the list
+			if (type < 6)
+			{
+				furnituresPresent.Add(type);
+			}
+
 			// item values larger than 3 mean it is suitcase with something inside
 			if (item > 3)
 			{
