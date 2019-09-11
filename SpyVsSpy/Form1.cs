@@ -53,11 +53,11 @@ namespace SpyVsSpy
 						}
 						else
 						{
-							int closeDoors = rooms[players[0].panelOnScreen].DoorNearby(players[0].playerPosition.floorCoordinates);
+							int closeDoor = rooms[players[0].panelOnScreen].DoorNearby(players[0].playerPosition.floorCoordinates);
 							// player is standing in front of a door
-							if (closeDoors != -1)
+							if (closeDoor != -1)
 							{
-								rooms[players[0].panelOnScreen].doors[closeDoors].Switch(0);
+								rooms[players[0].panelOnScreen].doors[closeDoor].Switch(0);
 							}
 							// no furniture and no door => drop item in a random furniture in the room
 							else
@@ -71,12 +71,32 @@ namespace SpyVsSpy
 					else if (players[0].state == 2)
 					{
 						players[0].state = 0;
+
 						// player is holding a time bomb
 						if (players[0].trap == 1)
 						{
-							Debug.WriteLine("upper room is occupied by " + rooms[0].occupiedBy);
 							Trap.SetTrap(rooms[0]);		// hard-coded 0 because player can only set trap when he is alone in his room
 						}
+						// player is holding a water bucket
+						else if (players[0].trap == 2)
+						{
+							int closeDoor = rooms[players[0].panelOnScreen].DoorNearby(players[0].playerPosition.floorCoordinates);
+							if (closeDoor != -1)
+							{
+								Trap.SetTrap(rooms[0].doors[closeDoor]);
+							}
+						}
+						// player is holding a bomb
+						else if (players[0].trap == 3)
+						{
+							int closeFurniture = rooms[players[0].panelOnScreen].FurnitureNearby(players[0].playerPosition.floorCoordinates);
+							if (closeFurniture != -1)
+							{
+								Trap.SetTrap(rooms[0].furnitures[closeFurniture]);
+							}
+						}
+
+						// note that if player is not next to a furniture or door and they press the release button, they will lose the trap
 					}
 					break;
 
@@ -235,6 +255,14 @@ namespace SpyVsSpy
 			// if player is crossing a door, loads the new room
 			if (doorCrossed != -1 && ValidateDoorCrossing(direction, doorCrossed))
 			{
+				// if player crosses a door with trap set, they die
+				if (Game.rooms[panelOnScreen].doors[doorCrossed].trap)
+				{
+					Game.rooms[panelOnScreen].doors[doorCrossed].trap = false;
+					Die();
+					return;
+				}
+
 				// update player's position
 				Coordinates newPosition = CalculatePositionAfterCrossingDoor(doorCrossed, playerPosition.floorCoordinates);
 				playerPosition.floorCoordinates = newPosition;
@@ -439,6 +467,14 @@ namespace SpyVsSpy
 			image.location = new Point(imagePosition.x, imagePosition.y - 15);
 			UI.UpdateObject(UI.roomPanels[Game.players[player].panelOnScreen], image, 15);
 			Debug.WriteLine("Player is in panel " + Convert.ToString(Game.players[player].panelOnScreen));
+
+			// if furniture contained a trap, player dies and the trap deactivates
+			if (trap)
+			{
+				Game.players[player].Die();
+				trap = false;
+			}
+
 			// if furniture contained an item, pick it up
 			if (item != -1)
 			{
