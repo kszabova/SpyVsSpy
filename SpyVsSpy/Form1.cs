@@ -187,7 +187,8 @@ namespace SpyVsSpy
 	public class Player
 	{
 		public int state;   // 0 - default, 1 - on trapulator, 2 - holding a trap
-		public int trap;	// 1 - time bomb, 2 - water bucket, 3 - bomb, -1 - none
+		public int trap;    // 1 - time bomb, 2 - water bucket, 3 - bomb, -1 - none
+		public int disarm;	// 2 - umbrella, 3 - shield, -1 - none
 		public int panelOnScreen;
 		public Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 141));
 		public TransparentPanel playerImage;
@@ -259,7 +260,7 @@ namespace SpyVsSpy
 				if (Game.rooms[panelOnScreen].doors[doorCrossed].trap)
 				{
 					Game.rooms[panelOnScreen].doors[doorCrossed].trap = false;
-					Die();
+					Trap.Activate(type, 2);
 					return;
 				}
 
@@ -299,6 +300,9 @@ namespace SpyVsSpy
 		// pick up item in furniture; return what item is now in furniture (-1 for none)
 		public int PickUpItem(int item)
 		{
+			// throw away disarm
+			disarm = -1;
+
 			// furniture contained suitcase -> player now has suitcase and everything in it
 			if (item == 4)
 			{
@@ -357,6 +361,27 @@ namespace SpyVsSpy
 				Item.HideFromTrapulator(i, type);
 			}
 			items[4] = false;
+		}
+
+		// takes disarm
+		public void PickUpDisarm(int furniture)
+		{
+			// throw away all items
+			int randFurniture = Game.rooms[panelOnScreen].GetRandomFurniture();
+			DropItemToFurniture(randFurniture);
+
+			// take the disarm
+			if (furniture == 6)
+			{
+				// umbrella in a coat rack
+				disarm = 2;
+			}
+			else if (furniture == 7)
+			{
+				// shield in a first aid kit
+				disarm = 3;
+			}
+			Debug.WriteLine("Player has disarm " + disarm);
 		}
 
 		// changes where player should be drawn
@@ -443,7 +468,7 @@ namespace SpyVsSpy
 	// handles furniture behavior
 	public class Furniture
 	{
-		public int type;    // from left (0) to right (5): bookcase, table, coat rack, shelf, microwave, drawer
+		public int type;    // from left (0) to right (5): bookcase, table, small shelf, shelf, microwave, drawer; 6 - coat rack, 7 - first aid kit
 		public int item;
 		public Size imageSize;
 		public Coordinates imagePosition;
@@ -466,13 +491,18 @@ namespace SpyVsSpy
 		{
 			image.location = new Point(imagePosition.x, imagePosition.y - 15);
 			UI.UpdateObject(UI.roomPanels[Game.players[player].panelOnScreen], image, 15);
-			Debug.WriteLine("Player is in panel " + Convert.ToString(Game.players[player].panelOnScreen));
 
 			// if furniture contained a trap, player dies and the trap deactivates
 			if (trap)
 			{
-				Game.players[player].Die();
+				Trap.Activate(player, 3);
 				trap = false;
+			}
+
+			// if furniture is either coat rack or first aid kit, take the disarm
+			if (type == 6 || type == 7)
+			{
+				Game.players[player].PickUpDisarm(type);
 			}
 
 			// if furniture contained an item, pick it up
@@ -502,10 +532,12 @@ namespace SpyVsSpy
 			{
 				case 0: return position.x < Coordinates.CalculateFloorLimit(position.y, 40, 'l') && position.y < 150;	// bookcase
 				case 1: return position.x > 130 && position.x < 250 && position.y > 100 && position.y < 120;			// desk
-				case 2: return position.x > 150 && position.x < 200 && position.y > 100 && position.y < 120;			// coat rack
+				case 2: return position.x > 150 && position.x < 200 && position.y > 100 && position.y < 120;			// small shelf
 				case 3: return position.x > 250 && position.x < 320 && position.y > 100 && position.y < 120;			// shelf
 				case 4: return position.x > 285 && position.x < 365 && position.y > 100 && position.y < 120;			// microwave
-				case 5: return position.x > Coordinates.CalculateFloorLimit(position.y, 40, 'r') && position.y < 140;	// drawer
+				case 5: return position.x > Coordinates.CalculateFloorLimit(position.y, 40, 'r') && position.y < 140;   // drawer
+				case 6: return position.x > 150 && position.x < 200 && position.y > 100 && position.y < 120;			// coat rack
+				case 7: return position.x > Coordinates.CalculateFloorLimit(position.y, 40, 'r') && position.y > 120 && position.y < 152;	// first aid kit
 				default: return false;
 			}
 		}
@@ -520,7 +552,9 @@ namespace SpyVsSpy
 				case 2: imagePosition = new Coordinates(150, 60); break;	// small shelf
 				case 3: imagePosition = new Coordinates(250, 60); break;	// shelf
 				case 4: imagePosition = new Coordinates(285, 60); break;	// microwave
-				case 5: imagePosition = new Coordinates(380, 30); break;	// drawer
+				case 5: imagePosition = new Coordinates(380, 30); break;    // drawer
+				case 6: imagePosition = new Coordinates(150, 40); break;    // coat rack
+				case 7: imagePosition = new Coordinates(420, 50); break;	// first aid kit
 			}
 		}
 
@@ -535,6 +569,8 @@ namespace SpyVsSpy
 				case 3: imageSize = new Size(70, 50); break;
 				case 4: imageSize = new Size(80, 50); break;
 				case 5: imageSize = new Size(60, 110); break;
+				case 6: imageSize = new Size(50, 70); break;
+				case 7: imageSize = new Size(30, 48); break;
 				default: imageSize = new Size(0, 0); break;
 			}
 		}
@@ -549,7 +585,9 @@ namespace SpyVsSpy
 				case 2: filename = "smallshelf.png"; break;
 				case 3: filename = "shelf.png"; break;
 				case 4: filename = "microwave.png"; break;
-				case 5: filename = "drawer.png"; break;	// TEMPORARY
+				case 5: filename = "drawer.png"; break;
+				case 6: filename = "coatrack.png"; break;
+				case 7: filename = "firstaid.png"; break;
 			}
 		}
 	}
@@ -787,10 +825,10 @@ namespace SpyVsSpy
 		}
 	}
 
+	// setting and activating traps
 	public class Trap
 	{
-		public int type;    // 0-bomb, 1-spring, 2-bucket, 3-gun, 4-timebomb
-		public int objectType;
+		// sets trap depending on type
 
 		public static void SetTrap(Room r)
 		{
@@ -806,31 +844,19 @@ namespace SpyVsSpy
 		{
 			d.trap = true;
 		}
-
-		public int MatchDisarm()
+		
+		// activate and kill player
+		public static void Activate(int player, int trapType)
 		{
-			return type;
+			if (Game.players[player].disarm != trapType)
+			{
+				Game.players[player].Die();
+			}
+			else
+			{
+				Game.players[player].disarm = -1;
+			}
 		}
-
-		public void Activate(int player)
-		{
-			Game.players[player].Die();
-		}
-
-		public void Set(Furniture furniture)
-		{
-
-		}
-
-		public void Set(Door door)
-		{
-
-		}
-	}
-
-	public class Disarm
-	{
-		public int type;	// 0-water bucket, 1-wire cutter, 2-umbrella, 3-scissors
 	}
 
 	public class Position
@@ -925,7 +951,7 @@ namespace SpyVsSpy
 	{
 		public char color;
 		public int occupiedBy;		// indicates which player is currently in the room, -1 if none, 2 if both
-		public Furniture[] furnitures = new Furniture[6];
+		public Furniture[] furnitures = new Furniture[8];
 		public Door[] doors = new Door[4];
 
 		public List<int> furnituresPresent = new List<int> { };     // list of all pieces of furniture by number present in the room
@@ -982,7 +1008,7 @@ namespace SpyVsSpy
 		// returns the number of furniture next to which the player is standing, -1 if none
 		public int FurnitureNearby(Coordinates playerPosition)
 		{
-			for (int i = 0; i < 6; ++i)
+			for (int i = 0; i < 8; ++i)
 			{
 				if (furnitures[i] != null && Furniture.PositionInRangeOfFurniture(i, playerPosition))
 				{
@@ -1048,12 +1074,12 @@ namespace SpyVsSpy
 			{
 				if (occupiedBy == 2)
 				{
-					Game.players[0].Die();
-					Game.players[1].Die();
+					Trap.Activate(0, 1);
+					Trap.Activate(1, 1);
 				}
 				else
 				{
-					Game.players[occupiedBy].Die();
+					Trap.Activate(occupiedBy, 1);
 				}
 			}
 		}
