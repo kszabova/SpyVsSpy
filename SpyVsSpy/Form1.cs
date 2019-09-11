@@ -25,18 +25,24 @@ namespace SpyVsSpy
 		// handles events when key is pressed
 		public static void EventOnKeyPress(char key)
 		{
-			if (players[0].alive)
-			{
-				switch (key)
-				{
-					// movement
-					case 'W': players[0].MovePlayer('U'); break;
-					case 'S': players[0].MovePlayer('D'); break;
-					case 'A': players[0].MovePlayer('L'); break;
-					case 'D': players[0].MovePlayer('R'); break;
+			// if player is dead, don't do anything
+			if (!players[0].alive)
+				return;
 
-					// examining furniture and opening doors
-					case 'X':
+			// otherwise do something depending on the key that was pressed
+			switch (key)
+			{
+				// movement
+				case 'W': players[0].MovePlayer('U'); break;
+				case 'S': players[0].MovePlayer('D'); break;
+				case 'A': players[0].MovePlayer('L'); break;
+				case 'D': players[0].MovePlayer('R'); break;
+
+				// examining furniture and opening doors
+				case 'X':
+					// player is in a room examining furniture
+					if (players[0].state == 0)
+					{
 						int closeFurniture = rooms[players[0].panelOnScreen].FurnitureNearby(players[0].playerPosition.floorCoordinates);
 						// player is standing in front of a furniture
 						if (closeFurniture != -1)
@@ -60,8 +66,36 @@ namespace SpyVsSpy
 								players[0].DropItemToFurniture(furniture);
 							}
 						}
-						break;
-				}
+					}
+					// player is holding a trap and wants to set it
+					else if (players[0].state == 2)
+					{
+						players[0].state = 0;
+						// player is holding a time bomb
+						if (players[0].trap == 1)
+						{
+							Debug.WriteLine("upper room is occupied by " + rooms[0].occupiedBy);
+							Trap.SetTrap(rooms[0]);		// hard-coded 0 because player can only set trap when he is alone in his room
+						}
+					}
+					break;
+
+				// entering trapulator
+				case 'Z':
+					if (players[0].state == 0)
+					{
+						players[0].state = 1;
+					}
+					break;
+
+				// choosing a trap
+				case '1': case '2': case '3':
+					if (players[0].state == 1)
+					{
+						players[0].trap = Convert.ToInt32(key) - 48;
+						players[0].state = 2;
+					}
+					break;
 			}
 		}
 
@@ -132,6 +166,8 @@ namespace SpyVsSpy
 	// player functionality
 	public class Player
 	{
+		public int state;   // 0 - default, 1 - on trapulator, 2 - holding a trap
+		public int trap;	// 1 - time bomb, 2 - water bucket, 3 - bomb, -1 - none
 		public int panelOnScreen;
 		public Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 141));
 		public TransparentPanel playerImage;
@@ -151,6 +187,8 @@ namespace SpyVsSpy
 		public Player(int type)
 		{
 			this.type = type;
+			state = 0;
+			trap = -1;
 			panelOnScreen = type;			// starting panel is the same as player type
 			if (type == 0)
 			{
@@ -383,6 +421,7 @@ namespace SpyVsSpy
 		public Coordinates imagePosition;
 		public ImageContainer image;
 		string filename;
+		public bool trap = false;
 
 		public Furniture(int type, int item)
 		{
@@ -490,6 +529,7 @@ namespace SpyVsSpy
 		public Size imageSize;
 		public Coordinates imagePosition;
 		public ImageContainer image;
+		public bool trap = false;
 
 		public Door(int location, Triplet leadsTo)
 		{
@@ -715,6 +755,21 @@ namespace SpyVsSpy
 	{
 		public int type;    // 0-bomb, 1-spring, 2-bucket, 3-gun, 4-timebomb
 		public int objectType;
+
+		public static void SetTrap(Room r)
+		{
+			r.ActivateTimeBomb();
+		}
+
+		public static void SetTrap(Furniture f)
+		{
+			f.trap = true;
+		}
+
+		public static void SetTrap(Door d)
+		{
+			d.trap = true;
+		}
 
 		public int MatchDisarm()
 		{
@@ -947,6 +1002,26 @@ namespace SpyVsSpy
 			Random random = new Random();
 			int index = random.Next(furnituresPresent.Count);
 			return furnituresPresent[index];
+		}
+
+		// starts countdown for time bomb and kills everyone who is in the room when it runs out
+		public void ActivateTimeBomb()
+		{
+			UI.Wait(10000);
+			Debug.WriteLine(color);
+			Debug.WriteLine("room is occupied by " + occupiedBy);
+			if (occupiedBy != -1)
+			{
+				if (occupiedBy == 2)
+				{
+					Game.players[0].Die();
+					Game.players[1].Die();
+				}
+				else
+				{
+					Game.players[occupiedBy].Die();
+				}
+			}
 		}
 
 		// returns the filename of background image depending on the color of room
@@ -1389,6 +1464,10 @@ namespace SpyVsSpy
 				case Keys.Left: case Keys.A: Game.EventOnKeyPress('A'); break;
 				case Keys.Right: case Keys.D: Game.EventOnKeyPress('D'); break;
 				case Keys.X: Game.EventOnKeyPress('X'); break;
+				case Keys.Z: Game.EventOnKeyPress('Z'); break;
+				case Keys.D1: Game.EventOnKeyPress('1'); break;
+				case Keys.D2: Game.EventOnKeyPress('2'); break;
+				case Keys.D3: Game.EventOnKeyPress('3'); break;
 			}
 			return base.ProcessCmdKey(ref msg, keyData);
 		}
