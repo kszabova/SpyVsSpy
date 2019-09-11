@@ -118,7 +118,7 @@ namespace SpyVsSpy
 				currentRoom.occupiedBy = -1;
 				nextRoom.occupiedBy = -1;
 				currentRoom.LoadRoom(UI.roomPanels[otherPlayer], otherPlayer);
-				nextRoom.LoadRoom(UI.roomPanels[player], otherPlayer);
+				nextRoom.LoadRoom(UI.roomPanels[player], player);
 				rooms[otherPlayer] = currentRoom;
 				rooms[player] = nextRoom;
 
@@ -1008,8 +1008,6 @@ namespace SpyVsSpy
 		public void ActivateTimeBomb()
 		{
 			UI.Wait(10000);
-			Debug.WriteLine(color);
-			Debug.WriteLine("room is occupied by " + occupiedBy);
 			if (occupiedBy != -1)
 			{
 				if (occupiedBy == 2)
