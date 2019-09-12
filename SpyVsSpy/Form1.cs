@@ -1289,7 +1289,6 @@ namespace SpyVsSpy
 		{
 			Rectangle areaToUpdate = GetRectangleWithMargin(image.location, image.size, margin);
 			panel.Invalidate(areaToUpdate);
-			//UpdatePlayerOnScreen(panel, 0);
 		}
 
 		// makes panel visible if visibility==true, otherwise makes it invisible
@@ -1415,7 +1414,7 @@ namespace SpyVsSpy
 			countdowns[0] = new TextPanel();
 			countdowns[0].Location = new Point(0, 0);
 			countdowns[0].Size = new Size(200, 100);
-			sidePanels[0].Controls.Add(countdowns[0]);
+			//sidePanels[0].Controls.Add(countdowns[0]);
 
 			roomPanels[1] = new TransparentPanel();
 			roomPanels[1].Location = new Point(20, 240);
@@ -1431,7 +1430,9 @@ namespace SpyVsSpy
 			countdowns[1] = new TextPanel();
 			countdowns[1].Location = new Point(0, 0);
 			countdowns[1].Size = new Size(200, 100);
-			sidePanels[1].Controls.Add(countdowns[1]);
+			//sidePanels[1].Controls.Add(countdowns[1]);
+
+			DisplayTraps();
 		}
 
 		// this causes buffer - find a better way?
@@ -1455,6 +1456,20 @@ namespace SpyVsSpy
 			return new Rectangle(newPoint, newSize);
 		}
 		
+		// draws traps on both trapulators
+		static void DisplayTraps()
+		{
+			string[] filenames = { "timebomb.png", "waterbucket.png", "bomb.png", "floorplan.png" };
+
+			for (int i = 0; i < 2; ++i)
+			{
+				for (int j = 0; j < 4; ++j)
+				{
+					ImageContainer trap = new ImageContainer(filenames[j], new Point(j * 50, 0), new Size(50, 50));
+					sidePanels[i].images.Add(trap);
+				}
+			}
+		}
 	}
 
 	// transparent control for graphics
