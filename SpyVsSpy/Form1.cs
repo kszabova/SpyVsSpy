@@ -108,6 +108,7 @@ namespace SpyVsSpy
 					if (players[0].state == 0)
 					{
 						players[0].state = 1;
+						UI.HighlightPanel(0);
 					}
 					break;
 
@@ -117,6 +118,7 @@ namespace SpyVsSpy
 					{
 						players[0].trap = Convert.ToInt32(key) - 48;
 						players[0].state = 2;
+						UI.UnhighlightPanel(0);
 					}
 					break;
 			}
@@ -1166,6 +1168,9 @@ namespace SpyVsSpy
 		public static TransparentPanel[] sidePanels = new TransparentPanel[2];
 		public static TextPanel[] countdowns = new TextPanel[2];
 
+		// for use in methods
+		static ImageContainer highlight = new ImageContainer("highlightedSidePanel.png", new Point(0, 0), new Size(200, 200));
+
 		// stops the application for the given amount of miliseconds
 		public static void Wait(int miliseconds)
 		{
@@ -1416,9 +1421,9 @@ namespace SpyVsSpy
 				parentForm.Controls.Add(sidePanels[i]);
 			
 				countdowns[i] = new TextPanel();
-				countdowns[i].Location = new Point(0, 0);
+				countdowns[i].Location = new Point(0, 50);
 				countdowns[i].Size = new Size(200, 100);
-				//sidePanels[i].Controls.Add(countdowns[i]);
+				sidePanels[i].Controls.Add(countdowns[i]);
 			}
 
 			// we must initialize items before traps because code in Item.ShowOnTrapulator() relies on the item index
@@ -1437,6 +1442,20 @@ namespace SpyVsSpy
 			
 			roomView.Invalidate(GetRectangleWithMargin(Game.players[0].playerImage.Location, Game.players[0].playerImage.Size, 5));
 			Game.players[0].playerImage.Invalidate();
+		}
+
+		// highlights trapulator
+		public static void HighlightPanel(int panel)
+		{
+			sidePanels[panel].images.Add(highlight);
+			sidePanels[panel].Invalidate();
+		}
+
+		// removes highlight from panel
+		public static void UnhighlightPanel(int panel)
+		{
+			sidePanels[panel].images.Remove(highlight);
+			sidePanels[panel].Invalidate();
 		}
 
 		// returns Rectangle with a given margin around a given area
