@@ -172,7 +172,6 @@ namespace SpyVsSpy
 		public static void Initialize(Form1 parent)
 		{
 			UI.parentForm = parent;
-			Item.InitializeItems();
 			Triplet humanFirstRoom;
 			Triplet computerFirstRoom;
 			UI.LoadLevel(1, out humanFirstRoom, out computerFirstRoom);
@@ -932,7 +931,7 @@ namespace SpyVsSpy
 	public class Item
 	{
 		// TODO change this for computer as well
-		static TransparentPanel[] itemsUp = new TransparentPanel[4];
+		//static TransparentPanel[] itemsUp = new TransparentPanel[4];
 
 		static string placeholderImage = "placeholderItem.png";
 		static Size imageSize = new Size(50, 50);
@@ -940,9 +939,12 @@ namespace SpyVsSpy
 		// creates space for item images on screen
 		public static void InitializeItems()
 		{
-			for (int i = 0; i < 4; ++i)
+			for (int i = 0; i < 2; ++i)
 			{
-				UI.sidePanels[0].images.Add(new ImageContainer(placeholderImage, CalculatePositionOnTrapulator(i).ToPoint(), imageSize));
+				for (int j = 0; j < 4; ++j)
+				{
+					UI.sidePanels[i].images.Add(new ImageContainer(placeholderImage, CalculatePositionOnTrapulator(j).ToPoint(), imageSize));
+				}
 			}
 		}
 
@@ -977,7 +979,7 @@ namespace SpyVsSpy
 		// returns coordinates where item image should appear on trapulator
 		static Coordinates CalculatePositionOnTrapulator(int item)
 		{
-			Coordinates coords = new Coordinates(0, 100);
+			Coordinates coords = new Coordinates(0, 150);
 			switch (item)
 			{
 				case 0:	coords.x = 0; break;
@@ -1400,38 +1402,27 @@ namespace SpyVsSpy
 		public static void LoadUI(Form1 form)
 		{
 			parentForm = form;
-			roomPanels[0] = new TransparentPanel();
-			roomPanels[0].Location = new Point(20, 20);
-			roomPanels[0].Size = new Size(500, 200);
-			parentForm.Controls.Add(roomPanels[0]);
-			roomPanels[0].BackColor = Color.Transparent;
+			for (int i = 0; i < 2; ++i)
+			{
+				roomPanels[i] = new TransparentPanel();
+				roomPanels[i].Location = new Point(20, 220 * i + 20);
+				roomPanels[i].Size = new Size(500, 200);
+				parentForm.Controls.Add(roomPanels[i]);
+				roomPanels[i].BackColor = Color.Transparent;
 
-			sidePanels[0] = new TransparentPanel();
-			sidePanels[0].Location = new Point(540, 20);
-			sidePanels[0].Size = new Size(200, 200);
-			parentForm.Controls.Add(sidePanels[0]);
+				sidePanels[i] = new TransparentPanel();
+				sidePanels[i].Location = new Point(540, 220 * i + 20);
+				sidePanels[i].Size = new Size(200, 200);
+				parentForm.Controls.Add(sidePanels[i]);
 			
-			countdowns[0] = new TextPanel();
-			countdowns[0].Location = new Point(0, 0);
-			countdowns[0].Size = new Size(200, 100);
-			//sidePanels[0].Controls.Add(countdowns[0]);
+				countdowns[i] = new TextPanel();
+				countdowns[i].Location = new Point(0, 0);
+				countdowns[i].Size = new Size(200, 100);
+				//sidePanels[i].Controls.Add(countdowns[i]);
+			}
 
-			roomPanels[1] = new TransparentPanel();
-			roomPanels[1].Location = new Point(20, 240);
-			roomPanels[1].Size = new Size(500, 200);
-			parentForm.Controls.Add(roomPanels[1]);
-			roomPanels[1].BackColor = Color.Transparent;
-
-			sidePanels[1] = new TransparentPanel();
-			sidePanels[1].Location = new Point(540, 240);
-			sidePanels[1].Size = new Size(200, 200);
-			parentForm.Controls.Add(sidePanels[1]);
-
-			countdowns[1] = new TextPanel();
-			countdowns[1].Location = new Point(0, 0);
-			countdowns[1].Size = new Size(200, 100);
-			//sidePanels[1].Controls.Add(countdowns[1]);
-
+			// we must initialize items before traps because code in Item.ShowOnTrapulator() relies on the item index
+			Item.InitializeItems();
 			DisplayTraps();
 		}
 
