@@ -1155,17 +1155,37 @@ namespace SpyVsSpy
 	{
 		static Player computer;
 
+		// initializes AI
 		public static void Start(Player player)
 		{
 			computer = player;
 
-			while (true)
+			Timer timer = new Timer()
 			{
-				player.MovePlayer('R');
-				UI.Wait(1000);
-				player.MovePlayer('L');
-				UI.Wait(1000);
-			}
+				Interval = 500,
+				Enabled = true
+			};
+
+			timer.Start();
+			timer.Tick += (s, e) =>
+			{
+				CalculateNextMove();
+			};
+		}
+
+		// returns a random direction
+		static char GetRandomDirection()
+		{
+			List<char> directions = new List<char> { 'R', 'L', 'U', 'D' };
+
+			Random random = new Random();
+			return directions[random.Next(directions.Count)];
+		}
+
+		// based on current state, decides what to do after timer ticks
+		static void CalculateNextMove()
+		{
+			computer.MovePlayer(GetRandomDirection());
 		}
 	}
 
@@ -1603,6 +1623,7 @@ namespace SpyVsSpy
 			this.Size = new Size(800, 500);
 			UI.LoadUI(this);
 			Game.Initialize(this);
+			ComputerAI.Start(Game.players[1]);
 		}
 	}
 }
