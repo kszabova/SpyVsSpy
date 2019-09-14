@@ -215,6 +215,8 @@ namespace SpyVsSpy
 		// for internal use
 		string aliveImage;
 		string deadImage;
+		string umbrellaImage;
+		string shieldImage;
 
 		// !! TEMPORARY !! - will depend on type of player, reduce repeating code etc
 		public Player(int type)
@@ -227,12 +229,16 @@ namespace SpyVsSpy
 			{
 				aliveImage = "playerWhite.png";
 				deadImage = "playerWhiteDead.png";
+				umbrellaImage = "playerWhiteUmbrella.png";
+				shieldImage = "playerWhiteShield.png";
 			}
 			else if (type == 1)
 			{
 				// TODO change these to computer pictures
 				aliveImage = "playerWhite.png";
 				deadImage = "playerWhiteDead.png";
+				umbrellaImage = "playerWhiteUmbrella.png";
+				shieldImage = "playerWhiteShield.png";
 			}
 			UpdatePlayerImageCoordinates();
 			playerImage = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
