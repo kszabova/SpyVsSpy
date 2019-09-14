@@ -191,7 +191,7 @@ namespace SpyVsSpy
 	public class Player
 	{
 		// basic characteristics of player
-		int type;		// 0 for human, 1 for computer
+		int playerType;		// 0 for human, 1 for computer
 		public int state;   // 0 - default, 1 - on trapulator, 2 - holding a trap
 		public bool alive = true;
 
@@ -221,9 +221,10 @@ namespace SpyVsSpy
 		// !! TEMPORARY !! - will depend on type of player, reduce repeating code etc
 		public Player(int type)
 		{
-			this.type = type;
+			this.playerType = type;
 			state = 0;
 			trap = -1;
+			disarm = -1;
 			panelOnScreen = type;			// starting panel is the same as player type
 			if (type == 0)
 			{
@@ -278,7 +279,7 @@ namespace SpyVsSpy
 				if (Game.rooms[panelOnScreen].doors[doorCrossed].trap)
 				{
 					Game.rooms[panelOnScreen].doors[doorCrossed].trap = false;
-					Trap.Activate(type, 2);
+					Trap.Activate(playerType, 2);
 					return;
 				}
 
@@ -291,7 +292,7 @@ namespace SpyVsSpy
 				// load new room
 				try
 				{
-					Game.LoadRoomByDoor(doorCrossed, type);
+					Game.LoadRoomByDoor(doorCrossed, playerType);
 				}
 				catch
 				{
@@ -320,7 +321,7 @@ namespace SpyVsSpy
 		public int PickUpItem(int item)
 		{
 			// throw away disarm
-			disarm = -1;
+			DropDisarm();
 
 			// furniture contained suitcase -> player now has suitcase and everything in it
 			if (item == 4)
@@ -331,7 +332,7 @@ namespace SpyVsSpy
 					items[i] = Suitcase.contents[i];
 					if (items[i])
 					{
-						Item.ShowOnTrapulator(i, type);
+						Item.ShowOnTrapulator(i, playerType);
 					}
 				}
 				return -1;
@@ -341,7 +342,7 @@ namespace SpyVsSpy
 			{
 				Suitcase.AddItem(item);
 				items[item] = true;
-				Item.ShowOnTrapulator(item, type);
+				Item.ShowOnTrapulator(item, playerType);
 				return -1;
 			}
 			// no suitcase
@@ -353,15 +354,15 @@ namespace SpyVsSpy
 				{
 					items[item] = true;
 					items[itemInPosession] = false;
-					Item.ShowOnTrapulator(item, type);
-					Item.HideFromTrapulator(itemInPosession, type);
+					Item.ShowOnTrapulator(item, playerType);
+					Item.HideFromTrapulator(itemInPosession, playerType);
 					return itemInPosession;
 				}
 				// player has no item -> simply pick up the one in the furniture
 				else
 				{
 					items[item] = true;
-					Item.ShowOnTrapulator(item, type);
+					Item.ShowOnTrapulator(item, playerType);
 					return itemInPosession;
 				}
 			}
@@ -377,7 +378,7 @@ namespace SpyVsSpy
 			for (int i = 0; i < 4; ++i)
 			{
 				items[i] = false;
-				Item.HideFromTrapulator(i, type);
+				Item.HideFromTrapulator(i, playerType);
 			}
 			items[4] = false;
 		}
@@ -397,12 +398,21 @@ namespace SpyVsSpy
 			{
 				// umbrella in a coat rack
 				disarm = 2;
+				UI.ChangeImageInPictureBox(playerImage, umbrellaImage);
 			}
 			else if (furniture == 7)
 			{
 				// shield in a first aid kit
 				disarm = 3;
+				UI.ChangeImageInPictureBox(playerImage, shieldImage);
 			}
+		}
+
+		// removes all disarms from player and sets his image to default
+		public void DropDisarm()
+		{
+			disarm = -1;
+			UI.ChangeImageInPictureBox(playerImage, aliveImage);
 		}
 
 		// changes where player should be drawn
@@ -1049,7 +1059,7 @@ namespace SpyVsSpy
 			}
 			else
 			{
-				Game.players[player].disarm = -1;
+				Game.players[player].DropDisarm();
 			}
 		}
 	}
