@@ -460,7 +460,7 @@ namespace SpyVsSpy
 		}
 
 		// returns number of item that player already has
-		int ItemInPosession()
+		public int ItemInPosession()
 		{
 			// first check if player has the suitcase
 			if (items[4])
@@ -661,7 +661,6 @@ namespace SpyVsSpy
 		// puts the furniture higher in the air
 		public void Lift(int player)
 		{
-			Debug.WriteLine("Player has disarm " + Game.players[player].disarm);
 			image.location = new Point(imagePosition.x, imagePosition.y - 15);
 			UI.UpdateObject(UI.roomPanels[Game.players[player].panelOnScreen], image, 15);
 
