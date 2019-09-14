@@ -236,10 +236,10 @@ namespace SpyVsSpy
 			else if (type == 1)
 			{
 				// TODO change these to computer pictures
-				aliveImage = "playerWhite.png";
-				deadImage = "playerWhiteDead.png";
-				umbrellaImage = "playerWhiteUmbrella.png";
-				shieldImage = "playerWhiteShield.png";
+				aliveImage = "playerBlack.png";
+				deadImage = "playerBlackDead.png";
+				umbrellaImage = "playerBlackUmbrella.png";
+				shieldImage = "playerBlackShield.png";
 			}
 			UpdatePlayerImageCoordinates();
 			playerImage = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
@@ -1151,6 +1151,7 @@ namespace SpyVsSpy
 		}
 	}
 
+	// handles actions of computer player
 	public class ComputerAI
 	{
 		static Player computer;
