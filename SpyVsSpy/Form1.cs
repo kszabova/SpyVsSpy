@@ -130,7 +130,12 @@ namespace SpyVsSpy
 			Room currentRoom = rooms[players[player].panelOnScreen];
 			Triplet leadsTo = currentRoom.doors[door].leadsTo;
 			Room nextRoom = levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
-			
+
+			// update player's position
+			players[player].playerPosition.floor = leadsTo.x;
+			players[player].playerPosition.roomX = leadsTo.y;
+			players[player].playerPosition.roomY = leadsTo.z;
+
 			// both players are in the current room => both new rooms are drawn into their respective default place
 			if (currentRoom.occupiedBy == 2)
 			{
@@ -179,8 +184,8 @@ namespace SpyVsSpy
 			UI.LoadLevel(1, out humanFirstRoom, out computerFirstRoom);
 			rooms[0] = levelMap[humanFirstRoom.x, humanFirstRoom.y, humanFirstRoom.z];
 			rooms[1] = levelMap[computerFirstRoom.x, computerFirstRoom.y, computerFirstRoom.z];
-			players[0] = new Player(0);
-			players[1] = new Player(1);
+			players[0] = new Player(0, humanFirstRoom);
+			players[1] = new Player(1, computerFirstRoom);
 			rooms[0].LoadRoom(UI.roomPanels[0], 0);
 			rooms[1].LoadRoom(UI.roomPanels[1], 1);
 			UI.Countdown();
@@ -191,7 +196,7 @@ namespace SpyVsSpy
 	public class Player
 	{
 		// basic characteristics of player
-		int playerType;		// 0 for human, 1 for computer
+		int playerType;     // 0 for human, 1 for computer
 		public int state;   // 0 - default, 1 - on trapulator, 2 - holding a trap
 		public bool alive = true;
 
@@ -204,7 +209,7 @@ namespace SpyVsSpy
 
 		// traps
 		public int trap;    // 1 - time bomb, 2 - water bucket, 3 - bomb, -1 - none
-		public int disarm;	// 2 - umbrella, 3 - shield, -1 - none
+		public int disarm;  // 2 - umbrella, 3 - shield, -1 - none
 
 		// timer
 		public int secondsLeft = 120;
@@ -219,13 +224,16 @@ namespace SpyVsSpy
 		string shieldImage;
 
 		// !! TEMPORARY !! - will depend on type of player, reduce repeating code etc
-		public Player(int type)
+		public Player(int type, Triplet initialRoom)
 		{
 			this.playerType = type;
+			playerPosition.floor = initialRoom.x;
+			playerPosition.roomX = initialRoom.y;
+			playerPosition.roomY = initialRoom.z;
 			state = 0;
 			trap = -1;
 			disarm = -1;
-			panelOnScreen = type;			// starting panel is the same as player type
+			panelOnScreen = type;           // starting panel is the same as player type
 			if (type == 0)
 			{
 				aliveImage = "playerWhite.png";
@@ -288,7 +296,7 @@ namespace SpyVsSpy
 				playerPosition.floorCoordinates = newPosition;
 				UpdatePlayerImageCoordinates();                                     // v
 				UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);   // make these two lines into a new function (Refresh?)
-				
+
 				// load new room
 				try
 				{
@@ -298,6 +306,11 @@ namespace SpyVsSpy
 				{
 					Game.players[0].Die();
 				}
+			}
+
+			if (ArePlayersClose(Game.players[0], Game.players[1]))
+			{
+				Debug.WriteLine("players are next to each other");
 			}
 		}
 
@@ -464,13 +477,13 @@ namespace SpyVsSpy
 		// calculates new position of player after crossing door
 		Coordinates CalculatePositionAfterCrossingDoor(int door, Coordinates curCoords)
 		{
-			Coordinates newCoords = new Coordinates(curCoords.x, curCoords.y);		// set the position to the same as current, only update the wrong coordinate
+			Coordinates newCoords = new Coordinates(curCoords.x, curCoords.y);      // set the position to the same as current, only update the wrong coordinate
 			switch (door)
 			{
 				case 0: newCoords.x = 295 + curCoords.y; break; // puts player 1px away from the wall
 				case 1: newCoords.y = 195; break;               // player appears at the bottom of the screen
 				case 2: newCoords.x = 205 - curCoords.y; break; // 1px away from the wall
-				case 3: newCoords.y = 101; break;				// directly in front of the top door
+				case 3: newCoords.y = 101; break;               // directly in front of the top door
 			}
 			return newCoords;
 		}
@@ -493,6 +506,16 @@ namespace SpyVsSpy
 			}
 			// if player doesn' have any item, return -1
 			return -1;
+		}
+
+		// returns true if players are in the same room and within 20pts of each other
+		public static bool ArePlayersClose(Player player1, Player player2)
+		{
+			return (player1.playerPosition.floor == player2.playerPosition.floor) &&
+				(player1.playerPosition.roomX == player2.playerPosition.roomX) &&
+				(player1.playerPosition.roomY == player2.playerPosition.roomY) &&
+				(player1.playerPosition.floorCoordinates.x - player2.playerPosition.floorCoordinates.x <= 20) &&
+				(player1.playerPosition.floorCoordinates.y - player2.playerPosition.floorCoordinates.y <= 20);
 		}
 	}
 
@@ -1064,6 +1087,7 @@ namespace SpyVsSpy
 		}
 	}
 
+	// keeps track of all aspects of position, i.e. floor, room and position in the room
 	public class Position
 	{
 		public int floor;
