@@ -330,6 +330,12 @@ namespace SpyVsSpy
 			alive = true;
 		}
 
+		// TODO hit the other player
+		public void Hit(Player opponent)
+		{
+
+		}
+
 		// pick up item in furniture; return what item is now in furniture (-1 for none)
 		public int PickUpItem(int item)
 		{
@@ -1035,6 +1041,7 @@ namespace SpyVsSpy
 	public class Suitcase
 	{
 		public static bool[] contents = new bool[4];
+		public static int numberOfItems;
 
 		// initialize suitcase with only one item
 		public Suitcase(int initialItem)
@@ -1044,11 +1051,14 @@ namespace SpyVsSpy
 				contents[i] = false;
 			}
 			contents[initialItem] = true;
+			numberOfItems = 1;
 		}
 
+		// adds new item to suitcase
 		public static void AddItem(int item)
 		{
 			contents[item] = true;
+			numberOfItems++;
 		}
 	}
 
@@ -1179,11 +1189,13 @@ namespace SpyVsSpy
 	public class ComputerAI
 	{
 		static Player computer;
+		static Player opponent;
 
 		// initializes AI
-		public static void Start(Player player)
+		public static void Start()
 		{
-			computer = player;
+			computer = Game.players[1];
+			opponent = Game.players[0];
 
 			Timer timer = new Timer()
 			{
@@ -1210,7 +1222,37 @@ namespace SpyVsSpy
 		// based on current state, decides what to do after timer ticks
 		static void CalculateNextMove()
 		{
-			computer.MovePlayer(GetRandomDirection());
+			// if players are close to each other, fight because otherwise the other one will fight
+			if (Player.ArePlayersClose(computer, opponent))
+			{
+				Fight();
+			}
+			// if player has collected all items, find your way to airport
+			else if (computer.ItemInPosession() == 4 && Suitcase.numberOfItems == 4)
+			{
+				FindWayToAirport();
+			}
+			// otherwise try to collect all items
+			else
+			{
+				ExploreLevel();
+			}
+		}
+
+		// fight other player
+		static void Fight()
+		{
+			computer.Hit(opponent);
+		}
+
+		static void FindWayToAirport()
+		{
+
+		}
+
+		static void ExploreLevel()
+		{
+
 		}
 	}
 
@@ -1648,7 +1690,7 @@ namespace SpyVsSpy
 			this.Size = new Size(800, 500);
 			UI.LoadUI(this);
 			Game.Initialize(this);
-			ComputerAI.Start(Game.players[1]);
+			ComputerAI.Start();
 		}
 	}
 }
