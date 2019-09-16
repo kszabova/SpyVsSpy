@@ -1191,6 +1191,9 @@ namespace SpyVsSpy
 		static Player computer;
 		static Player opponent;
 
+		static DoorsInRoom[,,] memoryDoors;
+		static FurnitureAndDoorsInRoom[,,] memoryObjects;
+
 		// initializes AI
 		public static void Start()
 		{
@@ -1208,6 +1211,33 @@ namespace SpyVsSpy
 			{
 				CalculateNextMove();
 			};
+		}
+
+		// data structure to keep track of visited objects in a room
+		public static void CreateMemory(Triplet levelShape)
+		{
+			memoryDoors = new DoorsInRoom[levelShape.x, levelShape.y, levelShape.z];
+			memoryObjects = new FurnitureAndDoorsInRoom[levelShape.x, levelShape.y, levelShape.z];
+		}
+
+		// adds all objects as unexplored
+		public static void CopyObjectsIntoRoom(Triplet roomCoords)
+		{
+			// initialize memory cells
+			memoryDoors[roomCoords.x, roomCoords.y, roomCoords.z] = new DoorsInRoom();
+			memoryObjects[roomCoords.x, roomCoords.y, roomCoords.z] = new FurnitureAndDoorsInRoom();
+
+			// add doors
+			foreach (int element in Game.levelMap[roomCoords.x, roomCoords.y, roomCoords.z].doorsPresent)
+			{
+				memoryDoors[roomCoords.x, roomCoords.y, roomCoords.z].unvisitedDoors.Add(element);
+				memoryObjects[roomCoords.x, roomCoords.y, roomCoords.z].unvisitedDoors.Add(element);
+			}
+			// add furniture
+			foreach (int element in Game.levelMap[roomCoords.x, roomCoords.y, roomCoords.z].furnituresPresent)
+			{
+				memoryObjects[roomCoords.x, roomCoords.y, roomCoords.z].unexaminedFurniture.Add(element);
+			}
 		}
 
 		// returns a random direction
@@ -1253,6 +1283,22 @@ namespace SpyVsSpy
 		static void ExploreLevel()
 		{
 
+		}
+
+		// doors in a room used when finding a way to the airport
+		class DoorsInRoom
+		{
+			public List<int> visitedDoors = new List<int> { };
+			public List<int> unvisitedDoors = new List<int> { };
+		}
+
+		// objects in a room used when exploring the floor
+		class FurnitureAndDoorsInRoom
+		{
+			public List<int> examinedFurniture = new List<int> { };
+			public List<int> unexaminedFurniture = new List<int> { };
+			public List<int> visitedDoors = new List<int> { };
+			public List<int> unvisitedDoors = new List<int> { };
 		}
 	}
 
@@ -1452,6 +1498,7 @@ namespace SpyVsSpy
 			int cols = Convert.ToInt32(lineSplit[2]);
 
 			Game.levelMap = new Room[floors, rows, cols];
+			ComputerAI.CreateMemory(new Triplet(floors, rows, cols));
 
 			// load individual rooms
 			for (int f = 0; f < floors; ++f)
@@ -1484,6 +1531,8 @@ namespace SpyVsSpy
 							Triplet leadsTo = new Triplet(Convert.ToInt32(leadsToSplit[0]), Convert.ToInt32(leadsToSplit[1]), Convert.ToInt32(leadsToSplit[2]));
 							currentRoom.AddDoor(Convert.ToInt32(doors[i]), leadsTo);
 						}
+
+						ComputerAI.CopyObjectsIntoRoom(new Triplet(f, r, c));
 					}
 			string[] humanRoomSplit = sr.ReadLine().Split(',');
 			string[] computerRoomSplit = sr.ReadLine().Split(',');
