@@ -1224,7 +1224,7 @@ namespace SpyVsSpy
 
 			Timer timer = new Timer()
 			{
-				Interval = 500,
+				Interval = 200,
 				Enabled = true
 			};
 
