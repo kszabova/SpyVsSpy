@@ -908,6 +908,19 @@ namespace SpyVsSpy
 			}
 		}
 
+		// returns the center of the bottom edge of the door
+		public static Coordinates GetCenterLocation(int location)
+		{
+			switch (location)
+			{
+				case 0: return new Coordinates(35, 165);
+				case 1: return new Coordinates(250, 100);
+				case 2: return new Coordinates(465, 165);
+				case 3: return new Coordinates(250, 195);
+				default: return new Coordinates(251, 151);
+			}
+		}
+
 		// switches the image to that of open door
 		void Open(int player)
 		{
@@ -1255,6 +1268,8 @@ namespace SpyVsSpy
 		// based on current state, decides what to do after timer ticks
 		static void CalculateNextMove()
 		{
+			FindWayToAirport();
+			/**
 			// if players are close to each other, fight because otherwise the other one will fight
 			if (Player.ArePlayersClose(computer, opponent))
 			{
@@ -1270,6 +1285,7 @@ namespace SpyVsSpy
 			{
 				ExploreLevel();
 			}
+			**/
 		}
 
 		// fight other player
@@ -1308,7 +1324,11 @@ namespace SpyVsSpy
 						Game.rooms[computer.panelOnScreen].doors[firstDoor].Switch(1);
 					}
 				}
-				
+				// otherwise go to the first door on list
+				else
+				{
+					GoToLocation(Door.GetCenterLocation(firstDoor));
+				}
 			}
 			// otherwise go back
 			else
@@ -1320,6 +1340,36 @@ namespace SpyVsSpy
 		static void ExploreLevel()
 		{
 
+		}
+
+		// move player towards a given location
+		static void GoToLocation(Coordinates coords)
+		{
+			Coordinates playerCoords = computer.playerPosition.floorCoordinates;
+
+			// if the horizontal difference is larger than the vertical difference
+			if (Math.Abs(playerCoords.x - coords.x) > Math.Abs(playerCoords.y - coords.y))
+			{
+				if (playerCoords.x < coords.x)
+				{
+					computer.MovePlayer('R');
+				}
+				else
+				{
+					computer.MovePlayer('L');
+				}
+			}
+			else
+			{
+				if (playerCoords.y < coords.y)
+				{
+					computer.MovePlayer('D');
+				}
+				else
+				{
+					computer.MovePlayer('U');
+				}
+			}
 		}
 
 		// doors in a room used when finding a way to the airport
