@@ -1302,12 +1302,13 @@ namespace SpyVsSpy
 						// load next room
 						Game.LoadRoomByDoor(firstDoor, 1);
 					}
+					// otherwise open them
+					else
+					{
+						Game.rooms[computer.panelOnScreen].doors[firstDoor].Switch(1);
+					}
 				}
-				// otherwise open them
-				else
-				{
-					Game.rooms[computer.panelOnScreen].doors[firstDoor].Switch(1);
-				}
+				
 			}
 			// otherwise go back
 			else
