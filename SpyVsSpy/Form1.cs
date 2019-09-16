@@ -292,10 +292,7 @@ namespace SpyVsSpy
 				}
 
 				// update player's position
-				Coordinates newPosition = CalculatePositionAfterCrossingDoor(doorCrossed, playerPosition.floorCoordinates);
-				playerPosition.floorCoordinates = newPosition;
-				UpdatePlayerImageCoordinates();                                     // v
-				UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);   // make these two lines into a new function (Refresh?)
+				UpdateImageInNewRoom(doorCrossed);
 
 				// load new room
 				try
@@ -445,6 +442,15 @@ namespace SpyVsSpy
 		public void DisplayPlayerInView()
 		{
 			UI.roomPanels[panelOnScreen].Controls.Add(playerImage);
+		}
+
+		// updates player's image after crossing door
+		public void UpdateImageInNewRoom(int doorCrossed)
+		{
+			Coordinates newPosition = CalculatePositionAfterCrossingDoor(doorCrossed, playerPosition.floorCoordinates);
+			playerPosition.floorCoordinates = newPosition;
+			UpdatePlayerImageCoordinates();
+			UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);
 		}
 
 		// removes player image from current panel
@@ -1303,20 +1309,25 @@ namespace SpyVsSpy
 				int firstDoor = memoryDoors[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].unvisitedDoors[0];
 				if (Door.PositionInRangeOfDoor(firstDoor, computer.playerPosition.floorCoordinates))
 				{
-					// if door is currently open
+					// if door is currently open, cross it
 					if (Game.rooms[computer.panelOnScreen].doors[firstDoor].open)
 					{
 						// save as visited
 						memoryDoors[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].unvisitedDoors.Remove(firstDoor);
 						memoryDoors[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].visitedDoors.Add(firstDoor);
 
-						// save opposite door to stack
+						// save opposite door as visited
 						int oppositeDoor = Door.GetCorrespondingDoor(firstDoor);
 						Triplet leadsTo = Game.rooms[computer.panelOnScreen].doors[firstDoor].leadsTo;
+						memoryDoors[leadsTo.x, leadsTo.y, leadsTo.z].unvisitedDoors.Remove(oppositeDoor);
+						memoryDoors[leadsTo.x, leadsTo.y, leadsTo.z].visitedDoors.Add(oppositeDoor);
+
+						// save opposite door to stack
 						DoorToAirportStack.Add(Game.levelMap[leadsTo.x, leadsTo.y, leadsTo.z].doors[oppositeDoor]);
 
-						// load next room
+						// load next room and update player's location
 						Game.LoadRoomByDoor(firstDoor, 1);
+						computer.UpdateImageInNewRoom(firstDoor);
 					}
 					// otherwise open them
 					else
