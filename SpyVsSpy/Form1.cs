@@ -896,7 +896,7 @@ namespace SpyVsSpy
 		}
 
 		// returns the number of the door on the opposite side of the wall
-		static int GetCorrespondingDoor(int location)
+		public static int GetCorrespondingDoor(int location)
 		{
 			switch (location)
 			{
@@ -1194,6 +1194,9 @@ namespace SpyVsSpy
 		static DoorsInRoom[,,] memoryDoors;
 		static FurnitureAndDoorsInRoom[,,] memoryObjects;
 
+		static List<Door> DoorToAirportStack = new List<Door> { };
+		static List<Door> DoorToExploreStack = new List<Door> { };
+
 		// initializes AI
 		public static void Start()
 		{
@@ -1277,7 +1280,40 @@ namespace SpyVsSpy
 
 		static void FindWayToAirport()
 		{
+			// there are still some unvisited doors left
+			if (memoryDoors[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].unvisitedDoors.Count != 0)
+			{
+				// if player is next to the first door in the unvisited list
+				int firstDoor = memoryDoors[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].unvisitedDoors[0];
+				if (Door.PositionInRangeOfDoor(firstDoor, computer.playerPosition.floorCoordinates))
+				{
+					// if door is currently open
+					if (Game.rooms[computer.panelOnScreen].doors[firstDoor].open)
+					{
+						// save as visited
+						memoryDoors[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].unvisitedDoors.Remove(firstDoor);
+						memoryDoors[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].visitedDoors.Add(firstDoor);
 
+						// save opposite door to stack
+						int oppositeDoor = Door.GetCorrespondingDoor(firstDoor);
+						Triplet leadsTo = Game.rooms[computer.panelOnScreen].doors[firstDoor].leadsTo;
+						DoorToAirportStack.Add(Game.levelMap[leadsTo.x, leadsTo.y, leadsTo.z].doors[oppositeDoor]);
+
+						// load next room
+						Game.LoadRoomByDoor(firstDoor, 1);
+					}
+				}
+				// otherwise open them
+				else
+				{
+					Game.rooms[computer.panelOnScreen].doors[firstDoor].Switch(1);
+				}
+			}
+			// otherwise go back
+			else
+			{
+
+			}
 		}
 
 		static void ExploreLevel()
