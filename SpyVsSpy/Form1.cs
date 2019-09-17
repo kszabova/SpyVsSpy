@@ -121,6 +121,9 @@ namespace SpyVsSpy
 						UI.UnhighlightPanel(0);
 					}
 					break;
+
+				// hit other player
+				case ' ': players[0].Hit(players[1]); break;
 			}
 		}
 
@@ -173,6 +176,9 @@ namespace SpyVsSpy
 				nextRoom.LoadRoom(UI.roomPanels[player], player);
 				rooms[player] = nextRoom;
 			}
+
+			// restore player health
+			players[player].health = 10;
 		}
 
 		// FOR NOW JUST FOR TESTING
@@ -214,6 +220,7 @@ namespace SpyVsSpy
 		// numeric data
 		public int secondsLeft = 120;
 		public int numberOfItems = 0;
+		public int health = 10;
 
 		// posessions
 		bool[] items = new bool[5];     // 0-passport, 1-key, 2-money, 3-secret plans, 4-suitcase
@@ -321,12 +328,23 @@ namespace SpyVsSpy
 			UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);
 			UI.ChangePictureBoxVisibility(playerImage, true);
 			alive = true;
+			health = 10;
 		}
 
 		// TODO hit the other player
 		public void Hit(Player opponent)
 		{
-
+			if (ArePlayersClose(this, opponent))
+			{
+				if (opponent.alive)
+				{
+					opponent.health--;
+					if (opponent.health == 0)
+					{
+						opponent.Die();
+					}
+				}
+			}
 		}
 
 		// pick up item in furniture; return what item is now in furniture (-1 for none)
@@ -527,8 +545,8 @@ namespace SpyVsSpy
 			return (player1.playerPosition.floor == player2.playerPosition.floor) &&
 				(player1.playerPosition.roomX == player2.playerPosition.roomX) &&
 				(player1.playerPosition.roomY == player2.playerPosition.roomY) &&
-				(player1.playerPosition.floorCoordinates.x - player2.playerPosition.floorCoordinates.x <= 10) &&
-				(player1.playerPosition.floorCoordinates.y - player2.playerPosition.floorCoordinates.y <= 10);
+				(Math.Abs(player1.playerPosition.floorCoordinates.x - player2.playerPosition.floorCoordinates.x) <= 10) &&
+				(Math.Abs(player1.playerPosition.floorCoordinates.y - player2.playerPosition.floorCoordinates.y) <= 10);
 		}
 	}
 
@@ -1232,6 +1250,8 @@ namespace SpyVsSpy
 		static List<Door> DoorToAirportStack = new List<Door> { };
 		static List<Door> DoorToExploreStack = new List<Door> { };
 
+		static bool hitLastTime = false;
+
 		// initializes AI
 		public static void Start()
 		{
@@ -1290,27 +1310,42 @@ namespace SpyVsSpy
 		// based on current state, decides what to do after timer ticks
 		static void CalculateNextMove()
 		{
-			// if players are close to each other, fight because otherwise the other one will fight
-			if (Player.ArePlayersClose(computer, opponent))
+			// only do things if alive
+			if (computer.alive)
 			{
-				Fight();
-			}
-			// if player has collected all items, find your way to airport
-			else if (computer.ItemInPosession() == 4 && Suitcase.numberOfItems == 4)
-			{
-				ExploreAllDoors(DoorToAirportStack);
-			}
-			// otherwise try to collect all items
-			else
-			{
-				ExploreLevel();
+				// if players are close to each other, fight because otherwise the other one will fight
+				if (Player.ArePlayersClose(computer, opponent))
+				{
+					Fight();
+				}
+				// if player has collected all items, find your way to airport
+				else if (computer.ItemInPosession() == 4 && Suitcase.numberOfItems == 4)
+				{
+					ExploreAllDoors(DoorToAirportStack);
+				}
+				// otherwise try to collect all items
+				else
+				{
+					ExploreLevel();
+				}
 			}
 		}
 
 		// fight other player
 		static void Fight()
 		{
-			computer.Hit(opponent);
+			Debug.WriteLine("are human and computer close " + Player.ArePlayersClose(opponent, computer));
+			Debug.WriteLine("are computer and human close " + Player.ArePlayersClose(computer, opponent));
+			// only hit every second tick to give human time
+			if (!hitLastTime)
+			{
+				computer.Hit(opponent);
+				hitLastTime = true;
+			}
+			else
+			{
+				hitLastTime = false;
+			}
 		}
 
 		// perform a depth-first search to visit every door
@@ -1393,6 +1428,7 @@ namespace SpyVsSpy
 			}
 		}
 
+		// lift all furniture and progress through the level
 		static void ExploreLevel()
 		{
 			// there are still furnitures player hasn't visited
@@ -1904,6 +1940,7 @@ namespace SpyVsSpy
 				case Keys.D1: Game.EventOnKeyPress('1'); break;
 				case Keys.D2: Game.EventOnKeyPress('2'); break;
 				case Keys.D3: Game.EventOnKeyPress('3'); break;
+				case Keys.Space: Game.EventOnKeyPress(' '); break;
 			}
 			return base.ProcessCmdKey(ref msg, keyData);
 		}
