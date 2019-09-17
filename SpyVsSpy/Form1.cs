@@ -211,8 +211,9 @@ namespace SpyVsSpy
 		public int trap;    // 1 - time bomb, 2 - water bucket, 3 - bomb, -1 - none
 		public int disarm;  // 2 - umbrella, 3 - shield, -1 - none
 
-		// timer
+		// numeric data
 		public int secondsLeft = 120;
+		public int numberOfItems = 0;
 
 		// posessions
 		bool[] items = new bool[5];     // 0-passport, 1-key, 2-money, 3-secret plans, 4-suitcase
@@ -346,12 +347,15 @@ namespace SpyVsSpy
 						Item.ShowOnTrapulator(i, playerType);
 					}
 				}
+				// update number of items
+				numberOfItems = Suitcase.numberOfItems;
 				return -1;
 			}
 			// player has suitcase -> add the item to it
 			else if (items[4])
 			{
 				Suitcase.AddItem(item);
+				numberOfItems = Suitcase.numberOfItems;
 				items[item] = true;
 				Item.ShowOnTrapulator(item, playerType);
 				return -1;
@@ -374,6 +378,7 @@ namespace SpyVsSpy
 				{
 					items[item] = true;
 					Item.ShowOnTrapulator(item, playerType);
+					numberOfItems = 1;
 					return itemInPosession;
 				}
 			}
@@ -383,6 +388,7 @@ namespace SpyVsSpy
 		public void DropItemToFurniture(int furniture)
 		{
 			int item = ItemInPosession();
+			numberOfItems = 0;
 			Game.rooms[panelOnScreen].furnitures[furniture].item = item;
 			Debug.WriteLine("Player dropped item " + item + " into furniture " + Convert.ToString(furniture));
 			// set all items to false; if player only had one item, it will get dropped; if they had a suitcase, they will lose all items
@@ -1396,10 +1402,22 @@ namespace SpyVsSpy
 				// if player is close to the furniture, lift it
 				if (Furniture.PositionInRangeOfFurniture(firstFurniture, computer.playerPosition.floorCoordinates))
 				{
+					int initialItems = computer.numberOfItems;
 					Game.rooms[computer.panelOnScreen].furnitures[firstFurniture].Lift(1);
-					memoryObjects[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].unexaminedFurniture.Remove(firstFurniture);
-					memoryObjects[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].examinedFurniture.Add(firstFurniture);
-					UI.Wait(500);
+					int finalItems = computer.numberOfItems;
+
+					// if player lost at least one item in this furniture, keep it as unvisited, otherwise mark as visited
+					if (finalItems < initialItems)
+					{
+						UI.Wait(100);
+					}
+					else
+					{
+						memoryObjects[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].unexaminedFurniture.Remove(firstFurniture);
+						memoryObjects[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].examinedFurniture.Add(firstFurniture);
+						UI.Wait(500);
+					}
+					
 					Game.rooms[computer.panelOnScreen].furnitures[firstFurniture].Release(1);
 				}
 				// otherwise go towards it
