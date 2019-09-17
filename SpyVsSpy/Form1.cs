@@ -560,8 +560,8 @@ namespace SpyVsSpy
 			return (player1.playerPosition.floor == player2.playerPosition.floor) &&
 				(player1.playerPosition.roomX == player2.playerPosition.roomX) &&
 				(player1.playerPosition.roomY == player2.playerPosition.roomY) &&
-				(Math.Abs(player1.playerPosition.floorCoordinates.x - player2.playerPosition.floorCoordinates.x) <= 10) &&
-				(Math.Abs(player1.playerPosition.floorCoordinates.y - player2.playerPosition.floorCoordinates.y) <= 10);
+				(Math.Abs(player1.playerPosition.floorCoordinates.x - player2.playerPosition.floorCoordinates.x) <= 20) &&
+				(Math.Abs(player1.playerPosition.floorCoordinates.y - player2.playerPosition.floorCoordinates.y) <= 20);
 		}
 	}
 
