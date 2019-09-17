@@ -202,7 +202,7 @@ namespace SpyVsSpy
 
 		// visible part of player
 		public PictureBox playerImage;
-		public Position playerPosition = new Position(1, 1, 1, new Coordinates(251, 141));
+		public Position playerPosition = new Position(1, 1, 1, new Coordinates(250, 140));
 		Coordinates playerImageCoordinates = new Coordinates(0, 0);
 		public Size imageSize = new Size(40, 40);
 		public int panelOnScreen;
@@ -303,11 +303,6 @@ namespace SpyVsSpy
 				{
 					Game.players[0].Die();
 				}
-			}
-
-			if (ArePlayersClose(Game.players[0], Game.players[1]))
-			{
-				Debug.WriteLine("players are next to each other");
 			}
 		}
 
@@ -526,8 +521,8 @@ namespace SpyVsSpy
 			return (player1.playerPosition.floor == player2.playerPosition.floor) &&
 				(player1.playerPosition.roomX == player2.playerPosition.roomX) &&
 				(player1.playerPosition.roomY == player2.playerPosition.roomY) &&
-				(player1.playerPosition.floorCoordinates.x - player2.playerPosition.floorCoordinates.x <= 20) &&
-				(player1.playerPosition.floorCoordinates.y - player2.playerPosition.floorCoordinates.y <= 20);
+				(player1.playerPosition.floorCoordinates.x - player2.playerPosition.floorCoordinates.x <= 10) &&
+				(player1.playerPosition.floorCoordinates.y - player2.playerPosition.floorCoordinates.y <= 10);
 		}
 	}
 
@@ -771,6 +766,21 @@ namespace SpyVsSpy
 				case 6: return position.x > 150 && position.x < 200 && position.y > 100 && position.y < 120;			// coat rack
 				case 7: return position.x > Coordinates.CalculateFloorLimit(position.y, 40, 'r') && position.y > 120 && position.y < 152;	// first aid kit
 				default: return false;
+			}
+		}
+
+		// return midpoint coordinates
+		public static Coordinates GetCenterLocation(int furnitureType)
+		{
+			switch (furnitureType)
+			{
+				case 0: return new Coordinates(85, 115);
+				case 1: return new Coordinates(190, 110);
+				case 2: return new Coordinates(175, 110);
+				case 3: return new Coordinates(285, 110);
+				case 4: return new Coordinates(325, 110);
+				case 5: return new Coordinates(410, 85);
+				default: return new Coordinates(251, 151);
 			}
 		}
 
@@ -1224,7 +1234,7 @@ namespace SpyVsSpy
 
 			Timer timer = new Timer()
 			{
-				Interval = 200,
+				Interval = 150,
 				Enabled = true
 			};
 
@@ -1274,8 +1284,6 @@ namespace SpyVsSpy
 		// based on current state, decides what to do after timer ticks
 		static void CalculateNextMove()
 		{
-			FindWayToAirport();
-			/**
 			// if players are close to each other, fight because otherwise the other one will fight
 			if (Player.ArePlayersClose(computer, opponent))
 			{
@@ -1284,14 +1292,13 @@ namespace SpyVsSpy
 			// if player has collected all items, find your way to airport
 			else if (computer.ItemInPosession() == 4 && Suitcase.numberOfItems == 4)
 			{
-				FindWayToAirport();
+				ExploreAllDoors(DoorToAirportStack);
 			}
 			// otherwise try to collect all items
 			else
 			{
 				ExploreLevel();
 			}
-			**/
 		}
 
 		// fight other player
@@ -1300,8 +1307,8 @@ namespace SpyVsSpy
 			computer.Hit(opponent);
 		}
 
-		// perform a depth-first search to find way to the airport
-		static void FindWayToAirport()
+		// perform a depth-first search to visit every door
+		static void ExploreAllDoors(List<Door> doorStack)
 		{
 			// there are still some unvisited doors left
 			if (memoryDoors[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].unvisitedDoors.Count != 0)
@@ -1324,7 +1331,7 @@ namespace SpyVsSpy
 						memoryDoors[leadsTo.x, leadsTo.y, leadsTo.z].visitedDoors.Add(oppositeDoor);
 
 						// save opposite door to stack
-						DoorToAirportStack.Add(Game.levelMap[leadsTo.x, leadsTo.y, leadsTo.z].doors[oppositeDoor]);
+						doorStack.Add(Game.levelMap[leadsTo.x, leadsTo.y, leadsTo.z].doors[oppositeDoor]);
 
 						// load next room and update player's location
 						Game.LoadRoomByDoor(firstDoor, 1);
@@ -1346,9 +1353,9 @@ namespace SpyVsSpy
 			else
 			{
 				// try going back
-				if (DoorToAirportStack.Count > 0)
+				if (doorStack.Count > 0)
 				{
-					int lastDoorOnStack = DoorToAirportStack[DoorToAirportStack.Count - 1].location;
+					int lastDoorOnStack = doorStack[doorStack.Count - 1].location;
 					// cross if you are close to it
 					if (Door.PositionInRangeOfDoor(lastDoorOnStack, computer.playerPosition.floorCoordinates))
 					{
@@ -1356,7 +1363,7 @@ namespace SpyVsSpy
 						{
 							int oppositeDoor = Door.GetCorrespondingDoor(lastDoorOnStack);
 							Triplet leadsTo = Game.rooms[computer.panelOnScreen].doors[lastDoorOnStack].leadsTo;
-							DoorToAirportStack.Remove(DoorToAirportStack[DoorToAirportStack.Count - 1]);
+							doorStack.Remove(doorStack[doorStack.Count - 1]);
 
 							Game.LoadRoomByDoor(lastDoorOnStack, 1);
 							computer.UpdateImageInNewRoom(lastDoorOnStack);
@@ -1382,13 +1389,37 @@ namespace SpyVsSpy
 
 		static void ExploreLevel()
 		{
-
+			// there are still furnitures player hasn't visited
+			if (memoryObjects[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].unexaminedFurniture.Count != 0)
+			{
+				int firstFurniture = memoryObjects[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].unexaminedFurniture[0];
+				// if player is close to the furniture, lift it
+				if (Furniture.PositionInRangeOfFurniture(firstFurniture, computer.playerPosition.floorCoordinates))
+				{
+					Game.rooms[computer.panelOnScreen].furnitures[firstFurniture].Lift(1);
+					memoryObjects[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].unexaminedFurniture.Remove(firstFurniture);
+					memoryObjects[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].examinedFurniture.Add(firstFurniture);
+					UI.Wait(500);
+					Game.rooms[computer.panelOnScreen].furnitures[firstFurniture].Release(1);
+				}
+				// otherwise go towards it
+				else
+				{
+					GoToLocation(Furniture.GetCenterLocation(firstFurniture));
+				}
+			}
+			// otherwise walk through a door
+			else
+			{
+				ExploreAllDoors(DoorToExploreStack);
+			}
 		}
 
 		// move player towards a given location
 		static void GoToLocation(Coordinates coords)
 		{
 			Coordinates playerCoords = computer.playerPosition.floorCoordinates;
+			Debug.WriteLine(computer.playerPosition.floorCoordinates.x.ToString() + computer.playerPosition.floorCoordinates.y);
 
 			// if the horizontal difference is larger than the vertical difference
 			if (Math.Abs(playerCoords.x - coords.x) > Math.Abs(playerCoords.y - coords.y))
