@@ -320,6 +320,7 @@ namespace SpyVsSpy
 			alive = false;
 			disarm = -1;
 			secondsLeft -= 15;
+			DropItemToFurniture(Game.rooms[panelOnScreen].GetRandomFurniture());
 			UI.ChangeImageInPictureBox(playerImage, deadImage);
 			UI.FadeAway(playerImage);
 			// after a while, player appears at the same place where he died
@@ -341,6 +342,11 @@ namespace SpyVsSpy
 					opponent.health--;
 					if (opponent.health == 0)
 					{
+						if (opponent.numberOfItems > 0)
+						{
+							PickUpItem(opponent.ItemInPosession());
+							opponent.LoseAllItems();
+						}
 						opponent.Die();
 					}
 				}
@@ -416,6 +422,15 @@ namespace SpyVsSpy
 				Item.HideFromTrapulator(i, playerType);
 			}
 			items[4] = false;
+		}
+
+		// drop all items
+		public void LoseAllItems()
+		{
+			for (int i = 0; i < 5; ++i)
+			{
+				items[i] = false;
+			}
 		}
 
 		// takes disarm
