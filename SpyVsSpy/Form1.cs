@@ -828,7 +828,7 @@ namespace SpyVsSpy
 	public class Door
 	{
 		// basic characteristics
-		int location;	// possible values 0-3, in the middle of each wall
+		public int location;	// possible values 0-3, in the middle of each wall
 		public bool open;
 		public Triplet leadsTo;
 		public bool trap = false;
@@ -1300,6 +1300,7 @@ namespace SpyVsSpy
 			computer.Hit(opponent);
 		}
 
+		// perform a depth-first search to find way to the airport
 		static void FindWayToAirport()
 		{
 			// there are still some unvisited doors left
@@ -1344,7 +1345,38 @@ namespace SpyVsSpy
 			// otherwise go back
 			else
 			{
+				// try going back
+				if (DoorToAirportStack.Count > 0)
+				{
+					int lastDoorOnStack = DoorToAirportStack[DoorToAirportStack.Count - 1].location;
+					// cross if you are close to it
+					if (Door.PositionInRangeOfDoor(lastDoorOnStack, computer.playerPosition.floorCoordinates))
+					{
+						if (Game.rooms[computer.panelOnScreen].doors[lastDoorOnStack].open)
+						{
+							int oppositeDoor = Door.GetCorrespondingDoor(lastDoorOnStack);
+							Triplet leadsTo = Game.rooms[computer.panelOnScreen].doors[lastDoorOnStack].leadsTo;
+							DoorToAirportStack.Remove(DoorToAirportStack[DoorToAirportStack.Count - 1]);
 
+							Game.LoadRoomByDoor(lastDoorOnStack, 1);
+							computer.UpdateImageInNewRoom(lastDoorOnStack);
+						}
+						else
+						{
+							Game.rooms[computer.panelOnScreen].doors[lastDoorOnStack].Switch(1);
+						}
+					}
+					// or go to it
+					else
+					{
+						GoToLocation(Door.GetCenterLocation(lastDoorOnStack));
+					}
+				}
+				// or you've exhausted all possibilities and just wander around mindlessly
+				else
+				{
+					computer.MovePlayer(GetRandomDirection());
+				}
 			}
 		}
 
