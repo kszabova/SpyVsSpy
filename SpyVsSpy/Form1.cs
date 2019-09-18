@@ -193,7 +193,9 @@ namespace SpyVsSpy
 			else
 			{
 				players[player].GoTo(new Coordinates(250, 150));
+				UI.ShowMessage("You can't go there yet!", player);
 				players[player].Die();
+				UI.RemoveMessage(player);
 			}
 		}
 
@@ -1575,9 +1577,16 @@ namespace SpyVsSpy
 		public static TransparentPanel[] roomPanels = new TransparentPanel[2];
 		public static TransparentPanel[] sidePanels = new TransparentPanel[2];
 		public static TextPanel[] countdowns = new TextPanel[2];
+		public static TextPanel[] messages = new TextPanel[2];
 
 		// for use in methods
 		static ImageContainer highlight = new ImageContainer("highlightedSidePanel.png", new Point(0, 0), new Size(200, 200));
+
+		// some visuals
+		static Font countdownFont = new Font("Calibri", 35);
+		static SolidBrush countdownBrush = new SolidBrush(Color.Chartreuse);
+		static Font messageFont = new Font("Calibri", 8);
+		static SolidBrush messageBrush = new SolidBrush(Color.Black);
 
 		// stops the application for the given amount of miliseconds
 		public static void Wait(int miliseconds)
@@ -1806,12 +1815,12 @@ namespace SpyVsSpy
 			int minutesHuman = Game.players[0].secondsLeft / 60;
 			int secondsHuman = Game.players[0].secondsLeft % 60;
 			string timeTextHuman = Convert.ToString(minutesHuman) + ":" + Convert.ToString(secondsHuman);
-			countdowns[0].UpdateText(timeTextHuman);
+			countdowns[0].UpdateText(timeTextHuman, countdownFont, countdownBrush);
 
 			int minutesComputer = Game.players[1].secondsLeft / 60;
 			int secondsComputer = Game.players[1].secondsLeft % 60;
 			string timeTextComputer = Convert.ToString(minutesComputer) + ":" + Convert.ToString(secondsComputer);
-			countdowns[1].UpdateText(timeTextComputer);
+			countdowns[1].UpdateText(timeTextComputer, countdownFont, countdownBrush);
 		}
 
 		// loads main parts of the UI
@@ -1833,13 +1842,31 @@ namespace SpyVsSpy
 			
 				countdowns[i] = new TextPanel();
 				countdowns[i].Location = new Point(0, 50);
-				countdowns[i].Size = new Size(200, 100);
+				countdowns[i].Size = new Size(100, 80);
 				sidePanels[i].Controls.Add(countdowns[i]);
+
+				messages[i] = new TextPanel();
+				messages[i].Location = new Point(0, 130);
+				messages[i].Size = new Size(200, 20);
+				sidePanels[i].Controls.Add(messages[i]);
+
 			}
 
 			// we must initialize items before traps because code in Item.ShowOnTrapulator() relies on the item index
 			Item.InitializeItems();
 			DisplayTraps();
+		}
+
+		// displays message to player
+		public static void ShowMessage(string text, int player)
+		{
+			messages[player].UpdateText(text, messageFont, messageBrush);
+		}
+
+		// removes message from player's inbox
+		public static void RemoveMessage(int player)
+		{
+			ShowMessage("", player);
 		}
 
 		// this causes buffer - find a better way?
@@ -1936,20 +1963,22 @@ namespace SpyVsSpy
 	// panel that can display dynamically updated text
 	public class TextPanel : Panel
 	{
-		public Font font = new Font("Calibri", 40);
-		public SolidBrush brush = new SolidBrush(Color.Aquamarine);
+		public Font font = new Font("Calibri", 35);
+		public SolidBrush brush = new SolidBrush(Color.Chartreuse);
 		public string text = "";
 
 		protected override void OnPaint(PaintEventArgs e)
 		{
 			Graphics g = e.Graphics;
-			g.DrawString(text, font, brush, new Point(20, 20));
+			g.DrawString(text, font, brush, new Point(5, 5));
 			base.OnPaint(e);
 		}
 
-		public void UpdateText(string text)
+		public void UpdateText(string text, Font font, SolidBrush brush)
 		{
 			Invalidate();
+			this.font = font;
+			this.brush = brush;
 			this.text = text;
 		}
 	}
