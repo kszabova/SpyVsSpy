@@ -15,6 +15,7 @@ namespace SpyVsSpy
 	// control of the game
 	public class Game
 	{
+		static bool started = false;
 		public static bool stopped = false;
 
 		// contains plan of current level
@@ -31,9 +32,12 @@ namespace SpyVsSpy
 		// handles events when key is pressed
 		public static void EventOnKeyPress(char key)
 		{
-			// if player is dead, don't do anything
-			if (!players[0].alive)
-				return;
+			if (started)
+			{
+				// if player is dead, don't do anything
+				if (!players[0].alive)
+					return;
+			}
 
 			// otherwise do something depending on the key that was pressed
 			switch (key)
@@ -127,6 +131,16 @@ namespace SpyVsSpy
 
 				// hit other player
 				case ' ': players[0].Hit(players[1]); break;
+
+				// toggle help
+				case 'H':
+					if (!started && !stopped)
+					{
+						started = true;
+						Initialize();
+					}
+					UI.ToggleHelp();
+					break;
 			}
 		}
 
@@ -209,16 +223,15 @@ namespace SpyVsSpy
 			players[loser].StopDoingActions();
 			players[winner].StopDoingActions();
 			UI.countdown.Stop();
-			UI.Wait(3000);
-			UI.ClearScreen();
+			UI.Wait(1500);
+			UI.ToggleScreen(false);
 			UI.DisplayWinnerMessage(winner);
 			stopped = true;
 		}
 
 		// FOR NOW JUST FOR TESTING
-		public static void Initialize(Form1 parent)
+		public static void Initialize()
 		{
-			UI.parentForm = parent;
 			Triplet humanFirstRoom;
 			Triplet computerFirstRoom;
 			UI.LoadLevel(1, out humanFirstRoom, out computerFirstRoom);
@@ -229,6 +242,7 @@ namespace SpyVsSpy
 			rooms[0].LoadRoom(UI.roomPanels[0], 0);
 			rooms[1].LoadRoom(UI.roomPanels[1], 1);
 			UI.Countdown();
+			ComputerAI.Start();
 		}
 
 	}
@@ -1618,6 +1632,7 @@ namespace SpyVsSpy
 		public static TransparentPanel[] sidePanels = new TransparentPanel[2];
 		public static TextPanel[] countdowns = new TextPanel[2];
 		public static TextPanel[] messages = new TextPanel[2];
+		public static PictureBox help;
 
 		// for use in methods
 		static ImageContainer highlight = new ImageContainer("highlightedSidePanel.png", new Point(0, 0), new Size(200, 200));
@@ -1872,6 +1887,8 @@ namespace SpyVsSpy
 		public static void LoadUI(Form1 form)
 		{
 			parentForm = form;
+			help = CreatePictureBox("help.png", new Coordinates(0, 0), new Size(800, 500));
+			parentForm.Controls.Add(help);
 
 			for (int i = 0; i < 2; ++i)
 			{
@@ -1901,15 +1918,32 @@ namespace SpyVsSpy
 			// we must initialize items before traps because code in Item.ShowOnTrapulator() relies on the item index
 			Item.InitializeItems();
 			DisplayTraps();
+			// at first, hide all images
+			ToggleScreen(false);
 		}
 
-		// removes all images from screen
-		public static void ClearScreen()
+		// removes or adds all images to screen
+		public static void ToggleScreen(bool visible)
 		{
 			for (int i = 0; i < 2; ++i)
 			{
-				parentForm.Controls.Remove(roomPanels[i]);
-				parentForm.Controls.Remove(sidePanels[i]);
+				roomPanels[i].Visible = visible;
+				sidePanels[i].Visible = visible;
+			}
+		}
+
+		// displays or hides help
+		public static void ToggleHelp()
+		{
+			if (help.Visible)
+			{
+				help.Visible = false;
+				ToggleScreen(true);
+			}
+			else
+			{
+				help.Visible = true;
+				ToggleScreen(false);
 			}
 		}
 
@@ -2079,6 +2113,7 @@ namespace SpyVsSpy
 				case Keys.D2: Game.EventOnKeyPress('2'); break;
 				case Keys.D3: Game.EventOnKeyPress('3'); break;
 				case Keys.Space: Game.EventOnKeyPress(' '); break;
+				case Keys.H: Game.EventOnKeyPress('H'); break;
 				case Keys.Enter:
 					if (Game.stopped)
 					{
@@ -2098,8 +2133,6 @@ namespace SpyVsSpy
 		{
 			this.Size = new Size(800, 500);
 			UI.LoadUI(this);
-			Game.Initialize(this);
-			ComputerAI.Start();
 		}
 	}
 }
