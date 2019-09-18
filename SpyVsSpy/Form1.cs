@@ -237,7 +237,7 @@ namespace SpyVsSpy
 		public int disarm;  // 2 - umbrella, 3 - shield, -1 - none
 
 		// numeric data
-		public int secondsLeft = 120;
+		public int secondsLeft = 240;
 		public int numberOfItems = 0;
 		public int health = 10;
 
@@ -1528,6 +1528,8 @@ namespace SpyVsSpy
 		// move player towards a given location
 		static void GoToLocation(Coordinates coords)
 		{
+			Coordinates previousPosition = computer.playerPosition.floorCoordinates;
+
 			Coordinates playerCoords = computer.playerPosition.floorCoordinates;
 
 			// if the horizontal difference is larger than the vertical difference
@@ -1552,6 +1554,13 @@ namespace SpyVsSpy
 				{
 					computer.MovePlayer('U');
 				}
+			}
+
+			Coordinates currentPosition = computer.playerPosition.floorCoordinates;
+			// if player didn't move (because of and unhandled case.. ugh), move randomly
+			if (previousPosition == currentPosition)
+			{
+				computer.MovePlayer(GetRandomDirection());
 			}
 		}
 
