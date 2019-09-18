@@ -934,7 +934,7 @@ namespace SpyVsSpy
 		}
 
 		// closes the door if open and vice versa
-		public void Switch(int player)
+		public int Switch(int player)
 		{
 			try
 			{
@@ -950,12 +950,14 @@ namespace SpyVsSpy
 					Open(player);
 					adjacentRoom.doors[oppositeDoor].Open(player);
 				}
+				return 0;
 			}
 			catch
 			{
 				// this should only happen if the adjacent room is the airport
 				Game.players[player].UpdateImageInNewRoom(location);
 				Game.LoadAirport(player);
+				return -1;
 			}
 		}
 
@@ -1429,7 +1431,13 @@ namespace SpyVsSpy
 					// otherwise open them
 					else
 					{
-						Game.rooms[computer.panelOnScreen].doors[firstDoor].Switch(1);
+						int res = Game.rooms[computer.panelOnScreen].doors[firstDoor].Switch(1);
+						// if it's not possible to open door - most likely because there's an airport and player can't go there yet
+						if (res == -1)
+						{
+							memoryDoors[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].unvisitedDoors.Remove(firstDoor);
+							memoryDoors[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].visitedDoors.Add(firstDoor);
+						}
 					}
 				}
 				// otherwise go to the first door on list
