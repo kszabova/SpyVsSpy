@@ -153,7 +153,7 @@ namespace SpyVsSpy
 			{
 				started = true;
 				Initialize();
-
+				UI.ToggleHelp();
 			}
 		}
 
@@ -2145,6 +2145,8 @@ namespace SpyVsSpy
 
 		private void Form1_Load(object sender, EventArgs e)
 		{
+			this.BackColor = Color.White;
+			this.Text = "SpyVsSpy";
 			this.Size = new Size(800, 500);
 			UI.LoadUI(this);
 		}
