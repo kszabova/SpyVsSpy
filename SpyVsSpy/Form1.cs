@@ -15,6 +15,8 @@ namespace SpyVsSpy
 	// control of the game
 	public class Game
 	{
+		public static bool stopped = false;
+
 		// contains plan of current level
 		public static Room[,,] levelMap;		
 
@@ -186,7 +188,7 @@ namespace SpyVsSpy
 		// try entering airport
 		public static void LoadAirport(int player)
 		{
-			if (true)//(players[player].ItemInPosession() == 4 && Suitcase.numberOfItems == 4)
+			if (players[player].ItemInPosession() == 4 && Suitcase.numberOfItems == 4)
 			{
 				airport.LoadRoom(UI.roomPanels[players[player].panelOnScreen], player);
 				Stop(player == 0 ? 1 : 0);
@@ -207,6 +209,10 @@ namespace SpyVsSpy
 			players[loser].StopDoingActions();
 			players[winner].StopDoingActions();
 			UI.countdown.Stop();
+			UI.Wait(3000);
+			UI.ClearScreen();
+			UI.DisplayWinnerMessage(winner);
+			stopped = true;
 		}
 
 		// FOR NOW JUST FOR TESTING
@@ -1897,10 +1903,28 @@ namespace SpyVsSpy
 			DisplayTraps();
 		}
 
+		// removes all images from screen
+		public static void ClearScreen()
+		{
+			for (int i = 0; i < 2; ++i)
+			{
+				parentForm.Controls.Remove(roomPanels[i]);
+				parentForm.Controls.Remove(sidePanels[i]);
+			}
+		}
+
 		// displays message to player
 		public static void ShowMessage(string text, int player)
 		{
 			messages[player].UpdateText(text, messageFont, messageBrush);
+		}
+
+		// displays message about who won over the whole form
+		public static void DisplayWinnerMessage(int winner)
+		{
+			string filename = "winnerMessage" + winner.ToString() + ".png";
+			PictureBox pb = CreatePictureBox(filename, new Coordinates(0, 0), new Size(800, 500));
+			parentForm.Controls.Add(pb);
 		}
 
 		// removes message from player's inbox
@@ -2055,6 +2079,12 @@ namespace SpyVsSpy
 				case Keys.D2: Game.EventOnKeyPress('2'); break;
 				case Keys.D3: Game.EventOnKeyPress('3'); break;
 				case Keys.Space: Game.EventOnKeyPress(' '); break;
+				case Keys.Enter:
+					if (Game.stopped)
+					{
+						Application.Exit();
+					}
+					break;
 			}
 			return base.ProcessCmdKey(ref msg, keyData);
 		}
