@@ -23,7 +23,8 @@ namespace SpyVsSpy
 		public static Room[] rooms = new Room[2];
 		
 		// placeholder object for when no room should be drawn into panel
-		static Room noRoom = new Room('X');		
+		static Room noRoom = new Room('X');
+		static Room airport = new Room('B');
 
 		// handles events when key is pressed
 		public static void EventOnKeyPress(char key)
@@ -132,6 +133,7 @@ namespace SpyVsSpy
 		{
 			Room currentRoom = rooms[players[player].panelOnScreen];
 			Triplet leadsTo = currentRoom.doors[door].leadsTo;
+			Debug.WriteLine(leadsTo.x.ToString(), leadsTo.y, leadsTo.z);
 			Room nextRoom = levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
 
 			// update player's position
@@ -181,6 +183,20 @@ namespace SpyVsSpy
 			players[player].health = 10;
 		}
 
+		// try entering airport
+		public static void LoadAirport(int player)
+		{
+			if (players[player].ItemInPosession() == 4 && Suitcase.numberOfItems == 4)
+			{
+				airport.LoadRoom(UI.roomPanels[players[player].panelOnScreen], player);
+			}
+			else
+			{
+				players[player].GoTo(new Coordinates(250, 150));
+				players[player].Die();
+			}
+		}
+
 		// FOR NOW JUST FOR TESTING
 		public static void Initialize(Form1 parent)
 		{
@@ -196,6 +212,7 @@ namespace SpyVsSpy
 			rooms[1].LoadRoom(UI.roomPanels[1], 1);
 			UI.Countdown();
 		}
+
 	}
 
 	// player functionality
@@ -309,15 +326,16 @@ namespace SpyVsSpy
 				UpdateImageInNewRoom(doorCrossed);
 
 				// load new room
-				try
-				{
-					Game.LoadRoomByDoor(doorCrossed, playerType);
-				}
-				catch
-				{
-					Game.players[0].Die();
-				}
+				Game.LoadRoomByDoor(doorCrossed, playerType);
 			}
+		}
+
+		// places player to an explicitly defined position
+		public void GoTo(Coordinates newPosition)
+		{
+			playerPosition.floorCoordinates = newPosition;
+			UpdatePlayerImageCoordinates();
+			UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);
 		}
 
 		// please dont
@@ -512,7 +530,6 @@ namespace SpyVsSpy
 		{
 			playerImageCoordinates.x = playerPosition.floorCoordinates.x - 20;
 			playerImageCoordinates.y = playerPosition.floorCoordinates.y - 40;
-			//image.location = playerImageCoordinates.ToPoint();
 		}
 
 		// checks if player is crossing a door; if so, sets the variable doorCrossed to the number of that door
@@ -917,9 +934,9 @@ namespace SpyVsSpy
 		// closes the door if open and vice versa
 		public void Switch(int player)
 		{
-			int oppositeDoor = GetCorrespondingDoor(location);
-			try			// remove
-			{			// remove
+			try
+			{
+				int oppositeDoor = GetCorrespondingDoor(location);
 				Room adjacentRoom = Game.levelMap[leadsTo.x, leadsTo.y, leadsTo.z];
 				if (open)
 				{
@@ -932,10 +949,12 @@ namespace SpyVsSpy
 					adjacentRoom.doors[oppositeDoor].Open(player);
 				}
 			}
-			catch		// remove
+			catch
 			{
-				Game.players[player].Die();//remove
-			}	//remove
+				// this should only happen if the adjacent room is the airport
+				Game.players[player].UpdateImageInNewRoom(location);
+				Game.LoadAirport(player);
+			}
 		}
 
 		// returns true if position is in front of a specific door
@@ -1363,8 +1382,6 @@ namespace SpyVsSpy
 		// fight other player
 		static void Fight()
 		{
-			Debug.WriteLine("are human and computer close " + Player.ArePlayersClose(opponent, computer));
-			Debug.WriteLine("are computer and human close " + Player.ArePlayersClose(computer, opponent));
 			// only hit every second tick to give human time
 			if (!hitLastTime)
 			{
@@ -1502,7 +1519,6 @@ namespace SpyVsSpy
 		static void GoToLocation(Coordinates coords)
 		{
 			Coordinates playerCoords = computer.playerPosition.floorCoordinates;
-			Debug.WriteLine(computer.playerPosition.floorCoordinates.x.ToString() + computer.playerPosition.floorCoordinates.y);
 
 			// if the horizontal difference is larger than the vertical difference
 			if (Math.Abs(playerCoords.x - coords.x) > Math.Abs(playerCoords.y - coords.y))
