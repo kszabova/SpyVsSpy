@@ -199,6 +199,14 @@ namespace SpyVsSpy
 			}
 		}
 
+		// stop game
+		public static void Stop(int loser)
+		{
+			int winner = loser == 0 ? 1 : 0;
+			players[loser].StopDoingActions();
+			players[winner].StopDoingActions();
+		}
+
 		// FOR NOW JUST FOR TESTING
 		public static void Initialize(Form1 parent)
 		{
@@ -237,7 +245,7 @@ namespace SpyVsSpy
 		public int disarm;  // 2 - umbrella, 3 - shield, -1 - none
 
 		// numeric data
-		public int secondsLeft = 240;
+		public int secondsLeft = 120;
 		public int numberOfItems = 0;
 		public int health = 10;
 
@@ -343,6 +351,7 @@ namespace SpyVsSpy
 		// please dont
 		public void Die()
 		{
+			bool previousState = alive;
 			alive = false;
 			disarm = -1;
 			secondsLeft -= 15;
@@ -354,8 +363,14 @@ namespace SpyVsSpy
 			UI.ChangeImageInPictureBox(playerImage, aliveImage);
 			UI.ChangePictureBoxLocation(playerImage, playerImageCoordinates);
 			UI.ChangePictureBoxVisibility(playerImage, true);
-			alive = true;
+			alive = previousState;
 			health = 10;
+		}
+
+		// stops player from doing anything
+		public void StopDoingActions()
+		{
+			alive = false;
 		}
 
 		// TODO hit the other player
@@ -1641,13 +1656,15 @@ namespace SpyVsSpy
 				UpdateTimer();
 				if (Game.players[0].secondsLeft <= 0)
 				{
-					Game.players[0].Die();
 					countdown.Stop();
+					Game.Stop(0);
+					Game.players[0].Die();
 				}
 				if (Game.players[0].secondsLeft <= 0)
 				{
-					Game.players[1].Die();
 					countdown.Stop();
+					Game.Stop(1);
+					Game.players[1].Die();
 				}
 			};
 		}
