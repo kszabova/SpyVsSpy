@@ -230,6 +230,7 @@ namespace SpyVsSpy
 		string deadImage;
 		string umbrellaImage;
 		string shieldImage;
+		string fightingImage;
 
 		// !! TEMPORARY !! - will depend on type of player, reduce repeating code etc
 		public Player(int type, Triplet initialRoom)
@@ -248,6 +249,7 @@ namespace SpyVsSpy
 				deadImage = "playerWhiteDead.png";
 				umbrellaImage = "playerWhiteUmbrella.png";
 				shieldImage = "playerWhiteShield.png";
+				fightingImage = "playerWhiteFighting.png";
 			}
 			else if (type == 1)
 			{
@@ -256,6 +258,7 @@ namespace SpyVsSpy
 				deadImage = "playerBlackDead.png";
 				umbrellaImage = "playerBlackUmbrella.png";
 				shieldImage = "playerBlackShield.png";
+				fightingImage = "playerBlackFighting.png";
 			}
 			UpdatePlayerImageCoordinates();
 			playerImage = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
@@ -339,6 +342,9 @@ namespace SpyVsSpy
 			{
 				if (opponent.alive)
 				{
+					UI.ChangeImageInPictureBox(playerImage, fightingImage);
+					UI.Wait(100);
+					UI.ChangeImageInPictureBox(playerImage, aliveImage);
 					opponent.health--;
 					if (opponent.health == 0)
 					{
