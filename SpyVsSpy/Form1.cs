@@ -231,6 +231,7 @@ namespace SpyVsSpy
 		string umbrellaImage;
 		string shieldImage;
 		string fightingImage;
+		string suitcaseImage;
 
 		// !! TEMPORARY !! - will depend on type of player, reduce repeating code etc
 		public Player(int type, Triplet initialRoom)
@@ -250,6 +251,7 @@ namespace SpyVsSpy
 				umbrellaImage = "playerWhiteUmbrella.png";
 				shieldImage = "playerWhiteShield.png";
 				fightingImage = "playerWhiteFighting.png";
+				suitcaseImage = "playerWhiteSuitcase.png";
 			}
 			else if (type == 1)
 			{
@@ -259,6 +261,7 @@ namespace SpyVsSpy
 				umbrellaImage = "playerBlackUmbrella.png";
 				shieldImage = "playerBlackShield.png";
 				fightingImage = "playerBlackFighting.png";
+				suitcaseImage = "playerBlackSuitcase.png";
 			}
 			UpdatePlayerImageCoordinates();
 			playerImage = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
@@ -368,6 +371,7 @@ namespace SpyVsSpy
 			// furniture contained suitcase -> player now has suitcase and everything in it
 			if (item == 4)
 			{
+				UI.ChangeImageInPictureBox(playerImage, suitcaseImage);
 				items[4] = true;
 				for (int i = 0; i < 4; ++i)
 				{
@@ -418,6 +422,10 @@ namespace SpyVsSpy
 		public void DropItemToFurniture(int furniture)
 		{
 			int item = ItemInPosession();
+			if (item == 4)
+			{
+				UI.ChangeImageInPictureBox(playerImage, aliveImage);
+			}
 			numberOfItems = 0;
 			Game.rooms[panelOnScreen].furnitures[furniture].item = item;
 			Debug.WriteLine("Player dropped item " + item + " into furniture " + Convert.ToString(furniture));
