@@ -37,110 +37,123 @@ namespace SpyVsSpy
 				// if player is dead, don't do anything
 				if (!players[0].alive)
 					return;
-			}
 
-			// otherwise do something depending on the key that was pressed
-			switch (key)
-			{
-				// movement
-				case 'W': players[0].MovePlayer('U'); break;
-				case 'S': players[0].MovePlayer('D'); break;
-				case 'A': players[0].MovePlayer('L'); break;
-				case 'D': players[0].MovePlayer('R'); break;
 
-				// examining furniture and opening doors
-				case 'X':
-					// player is in a room examining furniture
-					if (players[0].state == 0)
-					{
-						int closeFurniture = rooms[players[0].panelOnScreen].FurnitureNearby(players[0].playerPosition.floorCoordinates);
-						// player is standing in front of a furniture
-						if (closeFurniture != -1)
-						{
-							rooms[players[0].panelOnScreen].furnitures[closeFurniture].Lift(0);
-							UI.Wait(500);
-							rooms[players[0].panelOnScreen].furnitures[closeFurniture].Release(0);
-						}
-						else
-						{
-							int closeDoor = rooms[players[0].panelOnScreen].DoorNearby(players[0].playerPosition.floorCoordinates);
-							// player is standing in front of a door
-							if (closeDoor != -1)
-							{
-								rooms[players[0].panelOnScreen].doors[closeDoor].Switch(0);
-							}
-							// no furniture and no door => drop item in a random furniture in the room
-							else
-							{
-								int furniture = rooms[players[0].panelOnScreen].GetRandomFurniture();
-								players[0].DropItemToFurniture(furniture);
-							}
-						}
-					}
-					// player is holding a trap and wants to set it
-					else if (players[0].state == 2)
-					{
-						players[0].state = 0;
+				// otherwise do something depending on the key that was pressed
+				switch (key)
+				{
+					// movement
+					case 'W': players[0].MovePlayer('U'); break;
+					case 'S': players[0].MovePlayer('D'); break;
+					case 'A': players[0].MovePlayer('L'); break;
+					case 'D': players[0].MovePlayer('R'); break;
 
-						// player is holding a time bomb
-						if (players[0].trap == 1)
-						{
-							Trap.SetTrap(rooms[0]);		// hard-coded 0 because player can only set trap when he is alone in his room
-						}
-						// player is holding a water bucket
-						else if (players[0].trap == 2)
-						{
-							int closeDoor = rooms[players[0].panelOnScreen].DoorNearby(players[0].playerPosition.floorCoordinates);
-							if (closeDoor != -1)
-							{
-								Trap.SetTrap(rooms[0].doors[closeDoor]);
-							}
-						}
-						// player is holding a bomb
-						else if (players[0].trap == 3)
+					// examining furniture and opening doors
+					case 'X':
+						// player is in a room examining furniture
+						if (players[0].state == 0)
 						{
 							int closeFurniture = rooms[players[0].panelOnScreen].FurnitureNearby(players[0].playerPosition.floorCoordinates);
+							// player is standing in front of a furniture
 							if (closeFurniture != -1)
 							{
-								Trap.SetTrap(rooms[0].furnitures[closeFurniture]);
+								rooms[players[0].panelOnScreen].furnitures[closeFurniture].Lift(0);
+								UI.Wait(500);
+								rooms[players[0].panelOnScreen].furnitures[closeFurniture].Release(0);
+							}
+							else
+							{
+								int closeDoor = rooms[players[0].panelOnScreen].DoorNearby(players[0].playerPosition.floorCoordinates);
+								// player is standing in front of a door
+								if (closeDoor != -1)
+								{
+									rooms[players[0].panelOnScreen].doors[closeDoor].Switch(0);
+								}
+								// no furniture and no door => drop item in a random furniture in the room
+								else
+								{
+									int furniture = rooms[players[0].panelOnScreen].GetRandomFurniture();
+									players[0].DropItemToFurniture(furniture);
+								}
 							}
 						}
+						// player is holding a trap and wants to set it
+						else if (players[0].state == 2)
+						{
+							players[0].state = 0;
 
-						// note that if player is not next to a furniture or door and they press the release button, they will lose the trap
-					}
-					break;
+							// player is holding a time bomb
+							if (players[0].trap == 1)
+							{
+								Trap.SetTrap(rooms[0]);     // hard-coded 0 because player can only set trap when he is alone in his room
+							}
+							// player is holding a water bucket
+							else if (players[0].trap == 2)
+							{
+								int closeDoor = rooms[players[0].panelOnScreen].DoorNearby(players[0].playerPosition.floorCoordinates);
+								if (closeDoor != -1)
+								{
+									Trap.SetTrap(rooms[0].doors[closeDoor]);
+								}
+							}
+							// player is holding a bomb
+							else if (players[0].trap == 3)
+							{
+								int closeFurniture = rooms[players[0].panelOnScreen].FurnitureNearby(players[0].playerPosition.floorCoordinates);
+								if (closeFurniture != -1)
+								{
+									Trap.SetTrap(rooms[0].furnitures[closeFurniture]);
+								}
+							}
 
-				// entering trapulator
-				case 'Z':
-					if (players[0].state == 0)
-					{
-						players[0].state = 1;
-						UI.HighlightPanel(0);
-					}
-					break;
+							// note that if player is not next to a furniture or door and they press the release button, they will lose the trap
+						}
+						break;
 
-				// choosing a trap
-				case '1': case '2': case '3':
-					if (players[0].state == 1)
-					{
-						players[0].trap = Convert.ToInt32(key) - 48;
-						players[0].state = 2;
-						UI.UnhighlightPanel(0);
-					}
-					break;
+					// entering trapulator
+					case 'Z':
+						if (players[0].state == 0)
+						{
+							players[0].state = 1;
+							UI.HighlightPanel(0);
+						}
+						break;
 
-				// hit other player
-				case ' ': players[0].Hit(players[1]); break;
+					// choosing a trap
+					case '1':
+					case '2':
+					case '3':
+						if (players[0].state == 1)
+						{
+							players[0].trap = Convert.ToInt32(key) - 48;
+							players[0].state = 2;
+							UI.UnhighlightPanel(0);
+						}
+						break;
 
-				// toggle help
-				case 'H':
-					if (!started && !stopped)
-					{
-						started = true;
-						Initialize();
-					}
-					UI.ToggleHelp();
-					break;
+					// map is not implemented
+					case '4':
+						if (players[0].state == 1)
+						{
+							UI.ShowMessage("Your supervisor failed to give you the map.\nThat sucks.", 0);
+							players[0].state = 0;
+						}
+						break;
+
+					// hit other player
+					case ' ': players[0].Hit(players[1]); break;
+
+					// toggle help
+					case 'H':
+						UI.ToggleHelp();
+						break;
+				}
+			}
+			else if (key == 'H')
+			{
+				started = true;
+				Initialize();
+
 			}
 		}
 
@@ -1904,13 +1917,13 @@ namespace SpyVsSpy
 				parentForm.Controls.Add(sidePanels[i]);
 			
 				countdowns[i] = new TextPanel();
-				countdowns[i].Location = new Point(0, 50);
-				countdowns[i].Size = new Size(100, 80);
+				countdowns[i].Location = new Point(0, 60);
+				countdowns[i].Size = new Size(200, 50);
 				sidePanels[i].Controls.Add(countdowns[i]);
 
 				messages[i] = new TextPanel();
-				messages[i].Location = new Point(0, 130);
-				messages[i].Size = new Size(200, 20);
+				messages[i].Location = new Point(0, 110);
+				messages[i].Size = new Size(200, 40);
 				sidePanels[i].Controls.Add(messages[i]);
 
 			}
@@ -2112,6 +2125,7 @@ namespace SpyVsSpy
 				case Keys.D1: Game.EventOnKeyPress('1'); break;
 				case Keys.D2: Game.EventOnKeyPress('2'); break;
 				case Keys.D3: Game.EventOnKeyPress('3'); break;
+				case Keys.D4: Game.EventOnKeyPress('4'); break;
 				case Keys.Space: Game.EventOnKeyPress(' '); break;
 				case Keys.H: Game.EventOnKeyPress('H'); break;
 				case Keys.Enter:
