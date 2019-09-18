@@ -24,7 +24,7 @@ namespace SpyVsSpy
 		
 		// placeholder object for when no room should be drawn into panel
 		static Room noRoom = new Room('X');
-		static Room airport = new Room('B');
+		static Room airport = new Room('A');
 
 		// handles events when key is pressed
 		public static void EventOnKeyPress(char key)
@@ -186,9 +186,10 @@ namespace SpyVsSpy
 		// try entering airport
 		public static void LoadAirport(int player)
 		{
-			if (players[player].ItemInPosession() == 4 && Suitcase.numberOfItems == 4)
+			if (true)//(players[player].ItemInPosession() == 4 && Suitcase.numberOfItems == 4)
 			{
 				airport.LoadRoom(UI.roomPanels[players[player].panelOnScreen], player);
+				Stop(player == 0 ? 1 : 0);
 			}
 			else
 			{
@@ -205,6 +206,7 @@ namespace SpyVsSpy
 			int winner = loser == 0 ? 1 : 0;
 			players[loser].StopDoingActions();
 			players[winner].StopDoingActions();
+			UI.countdown.Stop();
 		}
 
 		// FOR NOW JUST FOR TESTING
@@ -1620,6 +1622,9 @@ namespace SpyVsSpy
 		static Font messageFont = new Font("Calibri", 8);
 		static SolidBrush messageBrush = new SolidBrush(Color.Black);
 
+		// countdown
+		public static Timer countdown;
+
 		// stops the application for the given amount of miliseconds
 		public static void Wait(int miliseconds)
 		{
@@ -1641,9 +1646,9 @@ namespace SpyVsSpy
 		}
 
 		// keeps track of time player has left
-		public static void Countdown()
+		public static void Countdown(bool stop=false)
 		{
-			Timer countdown = new Timer()
+			countdown = new Timer()
 			{
 				Interval = 1000,
 				Enabled = true
@@ -1861,6 +1866,7 @@ namespace SpyVsSpy
 		public static void LoadUI(Form1 form)
 		{
 			parentForm = form;
+
 			for (int i = 0; i < 2; ++i)
 			{
 				roomPanels[i] = new TransparentPanel();
