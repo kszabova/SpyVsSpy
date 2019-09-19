@@ -15,11 +15,14 @@ namespace SpyVsSpy
 	// control of the game
 	public class Game
 	{
-		int NUMBER_OF_LEVELS = 5;
+		static int NUMBER_OF_LEVELS = 3;
 
 		// state of game
 		static bool started = false;
 		public static bool stopped = false;
+		static int currentLevel = 0;
+		static int computer_wins = 0;
+		static int human_wins = 0;
 
 		// contains plan of current level
 		public static Room[,,] levelMap;		
@@ -155,7 +158,8 @@ namespace SpyVsSpy
 			else if (key == 'H')
 			{
 				started = true;
-				Initialize();
+				currentLevel++;
+				InitializeNextLevel();
 				UI.ToggleHelp();
 			}
 		}
@@ -221,7 +225,16 @@ namespace SpyVsSpy
 			if (players[player].ItemInPosession() == 4 && Suitcase.numberOfItems == 4)
 			{
 				airport.LoadRoom(UI.roomPanels[players[player].panelOnScreen], player);
-				Stop(player == 0 ? 1 : 0);
+				currentLevel++;
+				// if we reached the end of the game, show winner
+				if (currentLevel > NUMBER_OF_LEVELS)
+				{
+					Stop(human_wins > computer_wins ? 1 : 0);
+				}
+				else
+				{
+					InitializeNextLevel();
+				}
 			}
 			else
 			{
@@ -235,22 +248,29 @@ namespace SpyVsSpy
 		// stop game
 		public static void Stop(int loser)
 		{
-			int winner = loser == 0 ? 1 : 0;
-			players[loser].StopDoingActions();
-			players[winner].StopDoingActions();
+			players[0].StopDoingActions();
 			UI.countdown.Stop();
 			UI.Wait(1500);
 			UI.ToggleScreen(false);
-			UI.DisplayWinnerMessage(winner);
 			stopped = true;
+			players[1].StopDoingActions();
+			if (loser == 2)
+			{
+				UI.DisplayWinnerMessage(loser);
+			}
+			else
+			{
+				int winner = loser == 0 ? 1 : 0;
+				UI.DisplayWinnerMessage(winner);
+			}
 		}
 
-		// FOR NOW JUST FOR TESTING
-		public static void Initialize()
+		// loads all components of current level and starts countdown
+		public static void InitializeNextLevel()
 		{
 			Triplet humanFirstRoom;
 			Triplet computerFirstRoom;
-			UI.LoadLevel(3, out humanFirstRoom, out computerFirstRoom);
+			UI.LoadLevel(currentLevel, out humanFirstRoom, out computerFirstRoom);
 			rooms[0] = levelMap[humanFirstRoom.x, humanFirstRoom.y, humanFirstRoom.z];
 			rooms[1] = levelMap[computerFirstRoom.x, computerFirstRoom.y, computerFirstRoom.z];
 			players[0] = new Player(0, humanFirstRoom);
@@ -259,6 +279,12 @@ namespace SpyVsSpy
 			rooms[1].LoadRoom(UI.roomPanels[1], 1);
 			UI.Countdown();
 			ComputerAI.Start();
+		}
+
+		// starts game
+		public static void InitializeGame(Form1 parentForm)
+		{
+			UI.LoadUI(parentForm);
 		}
 
 	}
@@ -283,7 +309,7 @@ namespace SpyVsSpy
 		public int disarm;  // 2 - umbrella, 3 - shield, -1 - none
 
 		// numeric data
-		public int secondsLeft = 120;
+		public int secondsLeft = 5;
 		public int numberOfItems = 0;
 		public int health = 10;
 
@@ -1711,10 +1737,18 @@ namespace SpyVsSpy
 				if (Game.players[0].secondsLeft <= 0)
 				{
 					countdown.Stop();
-					Game.Stop(0);
+					// if both players timed out, no one wins
+					if (Game.players[1].secondsLeft <= 0)
+					{
+						Game.Stop(2);
+					}
+					else
+					{
+						Game.Stop(0);
+					}
 					Game.players[0].Die();
 				}
-				if (Game.players[0].secondsLeft <= 0)
+				if (Game.players[1].secondsLeft <= 0)
 				{
 					countdown.Stop();
 					Game.Stop(1);
@@ -2163,7 +2197,7 @@ namespace SpyVsSpy
 			this.BackColor = Color.White;
 			this.Text = "SpyVsSpy";
 			this.Size = new Size(800, 500);
-			UI.LoadUI(this);
+			Game.InitializeGame(this);
 		}
 	}
 }
