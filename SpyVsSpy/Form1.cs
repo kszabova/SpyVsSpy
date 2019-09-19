@@ -250,7 +250,7 @@ namespace SpyVsSpy
 		{
 			Triplet humanFirstRoom;
 			Triplet computerFirstRoom;
-			UI.LoadLevel(2, out humanFirstRoom, out computerFirstRoom);
+			UI.LoadLevel(3, out humanFirstRoom, out computerFirstRoom);
 			rooms[0] = levelMap[humanFirstRoom.x, humanFirstRoom.y, humanFirstRoom.z];
 			rooms[1] = levelMap[computerFirstRoom.x, computerFirstRoom.y, computerFirstRoom.z];
 			players[0] = new Player(0, humanFirstRoom);
@@ -1885,7 +1885,6 @@ namespace SpyVsSpy
 						for (int i = 0; i < noDoors * 2; i += 2)
 						{
 							string[] leadsToSplit = doors[i + 1].Split(',');
-							Debug.WriteLine("string to split is " + doors[i+1]);
 							Triplet leadsTo = new Triplet(Convert.ToInt32(leadsToSplit[0]), Convert.ToInt32(leadsToSplit[1]), Convert.ToInt32(leadsToSplit[2]));
 							currentRoom.AddDoor(Convert.ToInt32(doors[i]), leadsTo);
 						}
