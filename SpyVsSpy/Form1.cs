@@ -15,6 +15,9 @@ namespace SpyVsSpy
 	// control of the game
 	public class Game
 	{
+		int NUMBER_OF_LEVELS = 5;
+
+		// state of game
 		static bool started = false;
 		public static bool stopped = false;
 
@@ -25,7 +28,7 @@ namespace SpyVsSpy
 		public static Player[] players = new Player[2];
 		public static Room[] rooms = new Room[2];
 		
-		// placeholder object for when no room should be drawn into panel
+		// special rooms
 		static Room noRoom = new Room('X');
 		static Room airport = new Room('A');
 
@@ -247,7 +250,7 @@ namespace SpyVsSpy
 		{
 			Triplet humanFirstRoom;
 			Triplet computerFirstRoom;
-			UI.LoadLevel(1, out humanFirstRoom, out computerFirstRoom);
+			UI.LoadLevel(2, out humanFirstRoom, out computerFirstRoom);
 			rooms[0] = levelMap[humanFirstRoom.x, humanFirstRoom.y, humanFirstRoom.z];
 			rooms[1] = levelMap[computerFirstRoom.x, computerFirstRoom.y, computerFirstRoom.z];
 			players[0] = new Player(0, humanFirstRoom);
@@ -443,6 +446,10 @@ namespace SpyVsSpy
 			// furniture contained suitcase -> player now has suitcase and everything in it
 			if (item == 4)
 			{
+				if (ItemInPosession() != -1)
+				{
+					Suitcase.AddItem(ItemInPosession());
+				}
 				UI.ChangeImageInPictureBox(playerImage, suitcaseImage);
 				items[4] = true;
 				for (int i = 0; i < 4; ++i)
@@ -455,6 +462,7 @@ namespace SpyVsSpy
 				}
 				// update number of items
 				numberOfItems = Suitcase.numberOfItems;
+				Debug.WriteLine("Player has number of items: " + Suitcase.numberOfItems);
 				return -1;
 			}
 			// player has suitcase -> add the item to it
@@ -1877,6 +1885,7 @@ namespace SpyVsSpy
 						for (int i = 0; i < noDoors * 2; i += 2)
 						{
 							string[] leadsToSplit = doors[i + 1].Split(',');
+							Debug.WriteLine("string to split is " + doors[i+1]);
 							Triplet leadsTo = new Triplet(Convert.ToInt32(leadsToSplit[0]), Convert.ToInt32(leadsToSplit[1]), Convert.ToInt32(leadsToSplit[2]));
 							currentRoom.AddDoor(Convert.ToInt32(doors[i]), leadsTo);
 						}
