@@ -415,9 +415,11 @@ namespace SpyVsSpy
 			{
 				if (opponent.alive)
 				{
+					// remember which image player had previously
+					string previousImage = items[4] ? suitcaseImage : aliveImage;
 					UI.ChangeImageInPictureBox(playerImage, fightingImage);
 					UI.Wait(100);
-					UI.ChangeImageInPictureBox(playerImage, aliveImage);
+					UI.ChangeImageInPictureBox(playerImage, previousImage);
 					opponent.health--;
 					if (opponent.health == 0)
 					{
