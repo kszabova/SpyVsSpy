@@ -1420,6 +1420,11 @@ namespace SpyVsSpy
 				{
 					Fight();
 				}
+				// players are in the same room and the other player has a suitcase
+				else if (Game.rooms[computer.panelOnScreen].occupiedBy == 2 && opponent.ItemInPosession() == 4)
+				{
+					GoToLocation(opponent.playerPosition.floorCoordinates);
+				}
 				// if player has collected all items, find your way to airport
 				else if (computer.ItemInPosession() == 4 && Suitcase.numberOfItems == 4)
 				{
