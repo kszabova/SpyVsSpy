@@ -425,7 +425,8 @@ namespace SpyVsSpy
 			alive = false;
 			disarm = -1;
 			secondsLeft -= 15;
-			DropItemToFurniture(Game.rooms[panelOnScreen].GetRandomEmptyFurniture());
+			if (ItemInPosession() != -1) DropItemToFurniture(Game.rooms[panelOnScreen].GetRandomEmptyFurniture());
+			LoseAllItems();
 			UI.ChangeImageInPictureBox(playerImage, deadImage);
 			UI.FadeAway(playerImage);
 			// after a while, player appears at the same place where he died
@@ -541,22 +542,20 @@ namespace SpyVsSpy
 			Game.rooms[panelOnScreen].furnitures[furniture].item = item;
 			//Debug.WriteLine("Player dropped item " + item + " into furniture " + Convert.ToString(furniture));
 			// set all items to false; if player only had one item, it will get dropped; if they had a suitcase, they will lose all items
-			for (int i = 0; i < 4; ++i)
-			{
-				items[i] = false;
-				Item.HideFromTrapulator(i, playerType);
-			}
-			items[4] = false;
+			LoseAllItems();
 			Debug.WriteLine("Item " + item + " has been dropped into " + furniture);
 		}
 
 		// drop all items
 		public void LoseAllItems()
 		{
-			for (int i = 0; i < 5; ++i)
+			numberOfItems = 0;
+			for (int i = 0; i < 4; ++i)
 			{
 				items[i] = false;
+				Item.HideFromTrapulator(i, playerType);
 			}
+			items[4] = false;
 		}
 
 		// takes disarm
