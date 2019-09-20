@@ -78,7 +78,7 @@ namespace SpyVsSpy
 								// no furniture and no door => drop item in a random furniture in the room
 								else
 								{
-									int furniture = rooms[players[0].panelOnScreen].GetRandomFurniture();
+									int furniture = rooms[players[0].panelOnScreen].GetRandomEmptyFurniture();
 									players[0].DropItemToFurniture(furniture);
 								}
 							}
@@ -226,6 +226,11 @@ namespace SpyVsSpy
 			{
 				airport.LoadRoom(UI.roomPanels[players[player].panelOnScreen], player);
 				currentLevel++;
+				players[0].StopDoingActions();
+				players[1].StopDoingActions();
+				stopped = true;
+				UI.Wait(3000);
+				UI.ClearLevel();
 				// if we reached the end of the game, show winner
 				if (currentLevel > NUMBER_OF_LEVELS)
 				{
@@ -233,6 +238,7 @@ namespace SpyVsSpy
 				}
 				else
 				{
+					stopped = false;
 					InitializeNextLevel();
 				}
 			}
@@ -309,7 +315,7 @@ namespace SpyVsSpy
 		public int disarm;  // 2 - umbrella, 3 - shield, -1 - none
 
 		// numeric data
-		public int secondsLeft = 5;
+		public int secondsLeft = 240;
 		public int numberOfItems = 0;
 		public int health = 10;
 
@@ -419,7 +425,7 @@ namespace SpyVsSpy
 			alive = false;
 			disarm = -1;
 			secondsLeft -= 15;
-			DropItemToFurniture(Game.rooms[panelOnScreen].GetRandomFurniture());
+			DropItemToFurniture(Game.rooms[panelOnScreen].GetRandomEmptyFurniture());
 			UI.ChangeImageInPictureBox(playerImage, deadImage);
 			UI.FadeAway(playerImage);
 			// after a while, player appears at the same place where he died
@@ -468,7 +474,7 @@ namespace SpyVsSpy
 		{
 			// throw away disarm
 			DropDisarm();
-
+			
 			// furniture contained suitcase -> player now has suitcase and everything in it
 			if (item == 4)
 			{
@@ -488,7 +494,6 @@ namespace SpyVsSpy
 				}
 				// update number of items
 				numberOfItems = Suitcase.numberOfItems;
-				Debug.WriteLine("Player has number of items: " + Suitcase.numberOfItems);
 				return -1;
 			}
 			// player has suitcase -> add the item to it
@@ -534,7 +539,7 @@ namespace SpyVsSpy
 			}
 			numberOfItems = 0;
 			Game.rooms[panelOnScreen].furnitures[furniture].item = item;
-			Debug.WriteLine("Player dropped item " + item + " into furniture " + Convert.ToString(furniture));
+			//Debug.WriteLine("Player dropped item " + item + " into furniture " + Convert.ToString(furniture));
 			// set all items to false; if player only had one item, it will get dropped; if they had a suitcase, they will lose all items
 			for (int i = 0; i < 4; ++i)
 			{
@@ -542,6 +547,7 @@ namespace SpyVsSpy
 				Item.HideFromTrapulator(i, playerType);
 			}
 			items[4] = false;
+			Debug.WriteLine("Item " + item + " has been dropped into " + furniture);
 		}
 
 		// drop all items
@@ -557,7 +563,7 @@ namespace SpyVsSpy
 		public void PickUpDisarm(int furniture)
 		{
 			// throw away all items
-			int randFurniture = Game.rooms[panelOnScreen].GetRandomFurniture();
+			int randFurniture = Game.rooms[panelOnScreen].GetRandomEmptyFurniture();
 			if (ItemInPosession() != -1)
 			{
 				DropItemToFurniture(randFurniture);
@@ -662,7 +668,7 @@ namespace SpyVsSpy
 				return 4;
 			}
 			// otherwise check other items
-			for (int i = 1; i < 4; ++i)
+			for (int i = 0; i < 4; ++i)
 			{
 				if (items[i])
 				{
@@ -804,10 +810,19 @@ namespace SpyVsSpy
 		}
 
 		// returns the number of a random furniture in the room
-		public int GetRandomFurniture()
+		public int GetRandomEmptyFurniture()
 		{
 			Random random = new Random();
-			int index = random.Next(furnituresPresent.Count);
+			List<int> emptyFurnitures = new List<int> { };
+			// don't drop into already occupied furniture
+			foreach (int i in furnituresPresent)
+			{
+				if (furnitures[i].item == -1)
+				{
+					emptyFurnitures.Add(i);
+				}
+			}
+			int index = random.Next(emptyFurnitures.Count);
 			return furnituresPresent[index];
 		}
 
@@ -865,6 +880,7 @@ namespace SpyVsSpy
 		// puts the furniture higher in the air
 		public void Lift(int player)
 		{
+			if (player == 0) Debug.WriteLine("Item before lifting: " + item);
 			image.location = new Point(imagePosition.x, imagePosition.y - 15);
 			UI.UpdateObject(UI.roomPanels[Game.players[player].panelOnScreen], image, 15);
 
@@ -898,9 +914,10 @@ namespace SpyVsSpy
 				}
 				else
 				{
-					Game.players[player].DropItemToFurniture(Game.rooms[Game.players[player].panelOnScreen].GetRandomFurniture());
+					Game.players[player].DropItemToFurniture(Game.rooms[Game.players[player].panelOnScreen].GetRandomEmptyFurniture());
 				}
 			}
+			if (player == 0) Debug.WriteLine("Item after lifting: " + item);
 		}
 
 		// puts the furniture back in its original position
@@ -1250,6 +1267,7 @@ namespace SpyVsSpy
 		{
 			contents[item] = true;
 			numberOfItems++;
+			Debug.WriteLine(item + " item added, suitcase now has items: " + numberOfItems);
 		}
 	}
 
@@ -1982,6 +2000,13 @@ namespace SpyVsSpy
 			DisplayTraps();
 			// at first, hide all images
 			ToggleScreen(false);
+		}
+
+		// removes players
+		public static void ClearLevel()
+		{
+			Game.players[0].playerImage.Dispose();
+			Game.players[1].playerImage.Dispose();
 		}
 
 		// removes or adds all images to screen
