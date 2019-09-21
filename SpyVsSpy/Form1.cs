@@ -151,16 +151,20 @@ namespace SpyVsSpy
 
 					// toggle help
 					case 'H':
-						UI.ToggleHelp();
+						UI.ToggleScreenMessage('h');
 						break;
 				}
+			}
+			else if (key == '\n')
+			{
+				UI.ToggleScreenMessage('h', true);
 			}
 			else if (key == 'H')
 			{
 				started = true;
 				currentLevel++;
 				InitializeNextLevel();
-				UI.ToggleHelp();
+				UI.ToggleScreenMessage();
 			}
 		}
 
@@ -228,8 +232,9 @@ namespace SpyVsSpy
 				currentLevel++;
 				players[0].StopDoingActions();
 				players[1].StopDoingActions();
+				UI.ChangePictureBoxVisibility(players[player == 0 ? 1 : 0].playerImage, false);
 				stopped = true;
-				UI.Wait(3000);
+				UI.Wait(5000);
 				UI.ClearLevel();
 				// if we reached the end of the game, show winner
 				if (currentLevel > NUMBER_OF_LEVELS)
@@ -238,6 +243,9 @@ namespace SpyVsSpy
 				}
 				else
 				{
+					UI.ToggleScreenMessage('l', true);
+					UI.Wait(3000);
+					UI.ToggleScreenMessage();
 					stopped = false;
 					InitializeNextLevel();
 				}
@@ -1703,7 +1711,7 @@ namespace SpyVsSpy
 		public static TransparentPanel[] sidePanels = new TransparentPanel[2];
 		public static TextPanel[] countdowns = new TextPanel[2];
 		public static TextPanel[] messages = new TextPanel[2];
-		public static PictureBox help;
+		public static PictureBox screenMessage;
 
 		// for use in methods
 		static ImageContainer highlight = new ImageContainer("highlightedSidePanel.png", new Point(0, 0), new Size(200, 200));
@@ -1966,8 +1974,8 @@ namespace SpyVsSpy
 		public static void LoadUI(Form1 form)
 		{
 			parentForm = form;
-			help = CreatePictureBox("help.png", new Coordinates(0, 0), new Size(800, 500));
-			parentForm.Controls.Add(help);
+			screenMessage = CreatePictureBox("help.png", new Coordinates(0, 0), new Size(800, 500));
+			parentForm.Controls.Add(screenMessage);
 
 			for (int i = 0; i < 2; ++i)
 			{
@@ -1999,6 +2007,7 @@ namespace SpyVsSpy
 			DisplayTraps();
 			// at first, hide all images
 			ToggleScreen(false);
+			ToggleScreenMessage('w', true);
 		}
 
 		// removes players
@@ -2018,18 +2027,35 @@ namespace SpyVsSpy
 			}
 		}
 
-		// displays or hides help
-		public static void ToggleHelp()
+		// displays or hides message over the entire screen
+		public static void ToggleScreenMessage(char message='h', bool forceDisplay=false)
 		{
-			if (help.Visible)
+			string filename = "help.png";
+			switch (message)
 			{
-				help.Visible = false;
+				case 'w': filename = "welcome.png"; break;
+				case 'l': filename = "loadingLevel.png"; break;
+				case 'h': filename = "help.png"; break;
+			}
+
+			ChangeImageInPictureBox(screenMessage, filename);
+			if (forceDisplay)
+			{
+				screenMessage.Visible = true;
 				ToggleScreen(true);
 			}
 			else
 			{
-				help.Visible = true;
-				ToggleScreen(false);
+				if (screenMessage.Visible)
+				{
+					screenMessage.Visible = false;
+					ToggleScreen(true);
+				}
+				else
+				{
+					screenMessage.Visible = true;
+					ToggleScreen(false);
+				}
 			}
 		}
 
@@ -2205,6 +2231,10 @@ namespace SpyVsSpy
 					if (Game.stopped)
 					{
 						Application.Exit();
+					}
+					else
+					{
+						Game.EventOnKeyPress('\n');
 					}
 					break;
 			}
