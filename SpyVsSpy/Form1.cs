@@ -338,7 +338,6 @@ namespace SpyVsSpy
 		string fightingImage;
 		string suitcaseImage;
 
-		// !! TEMPORARY !! - will depend on type of player, reduce repeating code etc
 		public Player(int type, Triplet initialRoom)
 		{
 			this.playerType = type;
@@ -457,7 +456,7 @@ namespace SpyVsSpy
 		{
 			if (ArePlayersClose(this, opponent))
 			{
-				if (opponent.alive)
+				if (alive && opponent.alive)
 				{
 					// remember which image player had previously
 					string previousImage = items[4] ? suitcaseImage : aliveImage;
@@ -548,10 +547,8 @@ namespace SpyVsSpy
 			}
 			numberOfItems = 0;
 			Game.rooms[panelOnScreen].furnitures[furniture].item = item;
-			//Debug.WriteLine("Player dropped item " + item + " into furniture " + Convert.ToString(furniture));
 			// set all items to false; if player only had one item, it will get dropped; if they had a suitcase, they will lose all items
 			LoseAllItems();
-			Debug.WriteLine("Item " + item + " has been dropped into " + furniture);
 		}
 
 		// drop all items
@@ -595,7 +592,8 @@ namespace SpyVsSpy
 		public void DropDisarm()
 		{
 			disarm = -1;
-			UI.ChangeImageInPictureBox(playerImage, aliveImage);
+			string previousImage = items[4] ? suitcaseImage : aliveImage;
+			UI.ChangeImageInPictureBox(playerImage, previousImage);
 		}
 
 		// changes where player should be drawn
@@ -809,11 +807,11 @@ namespace SpyVsSpy
 		}
 
 		// adds a door to room
-		public void AddDoor(int i, Triplet leadsTo)
+		public void AddDoor(int type, Triplet leadsTo)
 		{
-			doorsPresent.Add(i);
-			doors[i] = new Door(i, leadsTo);
-			images.Add(doors[i].image);
+			doorsPresent.Add(type);
+			doors[type] = new Door(type, leadsTo);
+			images.Add(doors[type].image);
 		}
 
 		// returns the number of a random furniture in the room
@@ -1191,9 +1189,6 @@ namespace SpyVsSpy
 	// takes care mostly of trapulator images; most item logic is part of Player and Furniture class
 	public class Item
 	{
-		// TODO change this for computer as well
-		//static TransparentPanel[] itemsUp = new TransparentPanel[4];
-
 		static string placeholderImage = "placeholderItem.png";
 		static Size imageSize = new Size(50, 50);
 
@@ -1274,7 +1269,6 @@ namespace SpyVsSpy
 		{
 			contents[item] = true;
 			numberOfItems++;
-			Debug.WriteLine(item + " item added, suitcase now has items: " + numberOfItems);
 		}
 	}
 
@@ -1761,36 +1755,26 @@ namespace SpyVsSpy
 				UpdateTimer();
 				if (Game.players[0].secondsLeft <= 0)
 				{
+					Game.players[0].Die();
 					countdown.Stop();
 					// if both players timed out, no one wins
 					if (Game.players[1].secondsLeft <= 0)
 					{
+						Game.players[1].Die();
 						Game.Stop(2);
 					}
 					else
 					{
 						Game.Stop(0);
 					}
-					Game.players[0].Die();
 				}
 				if (Game.players[1].secondsLeft <= 0)
 				{
 					countdown.Stop();
-					Game.Stop(1);
 					Game.players[1].Die();
+					Game.Stop(1);
 				}
 			};
-		}
-		
-		// creates a new panel with specified parameters and returns the TransparentPanel instance
-		public static TransparentPanel CreateImage(string filename, Coordinates coords, Size size, Control parent)
-		{
-			TransparentPanel panel = new TransparentPanel();
-			panel.Size = size;
-			panel.Location = new Point(coords.x, coords.y);
-			panel.ChangeImage(baseImageAddress + filename, size);
-			parent.Controls.Add(panel);
-			return panel;
 		}
 
 		// creates a new PictureBox in the specified position and returns the PictureBox instance
@@ -1828,12 +1812,6 @@ namespace SpyVsSpy
 			{
 				pb.Visible = false;
 			}
-		}
-
-		// changes the image in given panel
-		public static void ChangeImageInPanel(TransparentPanel panel, string filename)
-		{
-			panel.ChangeImage(baseImageAddress + filename, panel.Size);
 		}
 
 		// changes the image displayed in a panel
@@ -2013,8 +1991,19 @@ namespace SpyVsSpy
 		// removes players
 		public static void ClearLevel()
 		{
-			Game.players[0].playerImage.Dispose();
-			Game.players[1].playerImage.Dispose();
+			for (int i = 0; i < 2; ++i)
+			{
+				Game.players[i].playerImage.Dispose();
+				for (int j = 0; j < 4; ++j)
+				{
+					Item.HideFromTrapulator(j, i);
+				}
+			}
+			// clear suitcase
+			for (int i = 0; i < 4; ++i)
+			{
+				Suitcase.contents[i] = false;
+			}
 		}
 
 		// removes or adds all images to screen
@@ -2160,13 +2149,6 @@ namespace SpyVsSpy
 				g.DrawImage(Image.FromFile(UI.baseImageAddress + image.filename), image.location.X, image.location.Y, image.size.Width, image.size.Height);
 			}
 			base.OnPaint(e);
-		}
-
-		public void ChangeImage(string filename, Size size)
-		{
-			imageFilename = filename;
-			Size = size;
-			Invalidate();
 		}
 	}
 
