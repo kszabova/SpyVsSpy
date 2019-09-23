@@ -15,7 +15,7 @@ namespace SpyVsSpy
 	// control of the game
 	public class Game
 	{
-		static int NUMBER_OF_LEVELS = 3;
+		static int NUMBER_OF_LEVELS = 1;
 
 		// state of game
 		static bool started = false;
@@ -229,6 +229,14 @@ namespace SpyVsSpy
 		{
 			if (players[player].ItemInPosession() == 4 && Suitcase.numberOfItems == 4)
 			{
+				if (player == 0)
+				{
+					human_wins++;
+				}
+				else
+				{
+					computer_wins++;
+				}
 				airport.LoadRoom(UI.roomPanels[players[player].panelOnScreen], player);
 				currentLevel++;
 				players[0].StopDoingActions();
@@ -263,6 +271,7 @@ namespace SpyVsSpy
 		// stop game
 		public static void Stop(int loser)
 		{
+			Debug.WriteLine("Loser is " + loser);
 			players[0].StopDoingActions();
 			UI.countdown.Stop();
 			UI.Wait(1500);
@@ -332,12 +341,12 @@ namespace SpyVsSpy
 		bool[] items = new bool[5];     // 0-passport, 1-key, 2-money, 3-secret plans, 4-suitcase
 
 		// for internal use
-		string aliveImage;
+		public string aliveImage;
 		string deadImage;
 		string umbrellaImage;
 		string shieldImage;
 		string fightingImage;
-		string suitcaseImage;
+		public string suitcaseImage;
 
 		public Player(int type, Triplet initialRoom)
 		{
@@ -378,6 +387,7 @@ namespace SpyVsSpy
 		// moves player in given direction and updates his position on the screen
 		public void MovePlayer(char direction)
 		{
+			UI.ChangeImageInPictureBox(playerImage, items[4] ? suitcaseImage : aliveImage);
 			Coordinates newCoords = new Coordinates(playerPosition.floorCoordinates.x, playerPosition.floorCoordinates.y);
 			int doorCrossed = -1;
 
@@ -476,6 +486,8 @@ namespace SpyVsSpy
 							opponent.LoseAllItems();
 						}
 						opponent.Die();
+						UI.ChangeImageInPictureBox(playerImage, previousImage);
+						UI.ChangeImageInPictureBox(opponent.playerImage, opponent.aliveImage);
 					}
 				}
 			}
@@ -1661,6 +1673,8 @@ namespace SpyVsSpy
 		// move player towards a given location
 		static void GoToLocation(Coordinates coords)
 		{
+			UI.ChangeImageInPictureBox(computer.playerImage, computer.ItemInPosession() == 4 ? computer.suitcaseImage : computer.aliveImage);
+
 			Coordinates previousPosition = computer.playerPosition.floorCoordinates;
 
 			Coordinates playerCoords = computer.playerPosition.floorCoordinates;
@@ -1732,7 +1746,7 @@ namespace SpyVsSpy
 		public static PictureBox screenMessage;
 
 		// for use in methods
-		static ImageContainer highlight = new ImageContainer("highlightedSidePanel.png", new Point(0, 0), new Size(200, 200));
+		static ImageContainer highlight = new ImageContainer("highlightedSidePanel.png", new Point(0, 0), new Size(200, 50));
 
 		// some visuals
 		static Font countdownFont = new Font("Calibri", 35);
@@ -1819,6 +1833,7 @@ namespace SpyVsSpy
 		public static void ChangeImageInPictureBox(PictureBox pb, string filename)
 		{
 			pb.ImageLocation = baseImageAddress + filename;
+			Debug.WriteLine("changing image to " + filename);
 		}
 
 		// changes the location of given PictureBox
@@ -2085,6 +2100,7 @@ namespace SpyVsSpy
 			messages[player].UpdateText(text, messageFont, messageBrush);
 		}
 
+		// updates health bar
 		public static void UpdateHealth(int health, int player)
 		{
 			healths[player].UpdateText((health * 10).ToString() + "%", healthFont, healthBrush);
