@@ -1530,6 +1530,13 @@ namespace SpyVsSpy
 					// if door is currently open, cross it
 					if (Game.rooms[computer.panelOnScreen].doors[firstDoor].open)
 					{
+						if (Game.rooms[computer.panelOnScreen].doors[firstDoor].trap)
+						{
+							Trap.Activate(1, 2);
+							Game.rooms[computer.panelOnScreen].doors[firstDoor].trap = false;
+							return;
+						}
+
 						// save as visited
 						memoryDoors[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].unvisitedDoors.Remove(firstDoor);
 						memoryDoors[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].visitedDoors.Add(firstDoor);
@@ -1628,8 +1635,15 @@ namespace SpyVsSpy
 						memoryObjects[computer.playerPosition.floor, computer.playerPosition.roomX, computer.playerPosition.roomY].examinedFurniture.Add(firstFurniture);
 						UI.Wait(500);
 					}
-					
-					Game.rooms[computer.panelOnScreen].furnitures[firstFurniture].Release(1);
+
+					try
+					{
+						Game.rooms[computer.panelOnScreen].furnitures[firstFurniture].Release(1);
+					}
+					catch
+					{
+
+					}
 				}
 				// otherwise go towards it
 				else
