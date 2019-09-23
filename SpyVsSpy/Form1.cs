@@ -221,6 +221,7 @@ namespace SpyVsSpy
 
 			// restore player health
 			players[player].health = 10;
+			UI.UpdateHealth(players[player].health, player);
 		}
 
 		// try entering airport
@@ -368,8 +369,9 @@ namespace SpyVsSpy
 				suitcaseImage = "playerBlackSuitcase.png";
 			}
 			UpdatePlayerImageCoordinates();
+			UI.UpdateHealth(health, playerType);
 			playerImage = UI.CreatePictureBox(aliveImage, playerImageCoordinates, imageSize);
-			UI.roomPanels[type].BackColor = Color.Transparent;     // ?? why doesn't this work when it is in UI.LoadUI only?
+			UI.roomPanels[type].BackColor = Color.Transparent;
 			DisplayPlayerInView();
 		}
 
@@ -443,6 +445,7 @@ namespace SpyVsSpy
 			UI.ChangePictureBoxVisibility(playerImage, true);
 			alive = previousState;
 			health = 10;
+			UI.UpdateHealth(health, playerType);
 		}
 
 		// stops player from doing anything
@@ -464,6 +467,7 @@ namespace SpyVsSpy
 					UI.Wait(100);
 					UI.ChangeImageInPictureBox(playerImage, previousImage);
 					opponent.health--;
+					UI.UpdateHealth(opponent.health, opponent.playerType);
 					if (opponent.health == 0)
 					{
 						if (opponent.numberOfItems > 0)
@@ -546,7 +550,12 @@ namespace SpyVsSpy
 				UI.ChangeImageInPictureBox(playerImage, aliveImage);
 			}
 			numberOfItems = 0;
-			Game.rooms[panelOnScreen].furnitures[furniture].item = item;
+			// we must prevent losing already existing item in furniture
+			if (Game.rooms[panelOnScreen].furnitures[furniture].item == -1)
+			{
+				Debug.WriteLine("Dropped item " + item + " to furniture " + furniture);
+				Game.rooms[panelOnScreen].furnitures[furniture].item = item;
+			}
 			// set all items to false; if player only had one item, it will get dropped; if they had a suitcase, they will lose all items
 			LoseAllItems();
 		}
@@ -909,11 +918,11 @@ namespace SpyVsSpy
 				int newItem = Game.players[player].PickUpItem(item);
 				item = newItem;
 			}
-			// otherwise put any object player is carrying inside that furniture
+			// otherwise put any object player is carrying inside that furniture or to a non-empty furniture
 			else
 			{
 				// we can't put it into a coat rack or first aid kit
-				if (type != 6 && type != 7)
+				if (type != 6 && type != 7 && item == -1)
 				{
 					Game.players[player].DropItemToFurniture(type);
 				}
@@ -1705,6 +1714,7 @@ namespace SpyVsSpy
 		public static TransparentPanel[] sidePanels = new TransparentPanel[2];
 		public static TextPanel[] countdowns = new TextPanel[2];
 		public static TextPanel[] messages = new TextPanel[2];
+		public static TextPanel[] healths = new TextPanel[2];
 		public static PictureBox screenMessage;
 
 		// for use in methods
@@ -1715,6 +1725,8 @@ namespace SpyVsSpy
 		static SolidBrush countdownBrush = new SolidBrush(Color.Chartreuse);
 		static Font messageFont = new Font("Calibri", 8);
 		static SolidBrush messageBrush = new SolidBrush(Color.Black);
+		static Font healthFont = new Font("Calibri", 25);
+		static SolidBrush healthBrush = new SolidBrush(Color.Black);
 
 		// countdown
 		public static Timer countdown;
@@ -1970,13 +1982,18 @@ namespace SpyVsSpy
 			
 				countdowns[i] = new TextPanel();
 				countdowns[i].Location = new Point(0, 60);
-				countdowns[i].Size = new Size(200, 50);
+				countdowns[i].Size = new Size(100, 50);
 				sidePanels[i].Controls.Add(countdowns[i]);
 
 				messages[i] = new TextPanel();
 				messages[i].Location = new Point(0, 110);
 				messages[i].Size = new Size(200, 40);
 				sidePanels[i].Controls.Add(messages[i]);
+
+				healths[i] = new TextPanel();
+				healths[i].Location = new Point(100, 60);
+				healths[i].Size = new Size(100, 50);
+				sidePanels[i].Controls.Add(healths[i]);
 
 			}
 
@@ -2052,6 +2069,11 @@ namespace SpyVsSpy
 		public static void ShowMessage(string text, int player)
 		{
 			messages[player].UpdateText(text, messageFont, messageBrush);
+		}
+
+		public static void UpdateHealth(int health, int player)
+		{
+			healths[player].UpdateText((health * 10).ToString() + "%", healthFont, healthBrush);
 		}
 
 		// displays message about who won over the whole form
